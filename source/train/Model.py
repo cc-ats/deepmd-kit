@@ -232,6 +232,7 @@ class Model() :
             force = force + sw_force + tab_force
 
         force = tf.reshape (force, [-1, 3 * natoms[1]], name = "o_force"+suffix)
+        print("Junjie HACK: force = ", force)
 
         if self.srtab is not None :
             sw_virial, sw_atom_virial \
