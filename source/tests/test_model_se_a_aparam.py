@@ -97,12 +97,21 @@ class TestModel(unittest.TestCase):
 
         sess = tf.Session()
         sess.run(tf.global_variables_initializer())
-        [e, f, v] = sess.run([energy, force, virial], 
+        [e, f, v, ae] = sess.run([energy, force, virial, atom_ener], 
                              feed_dict = feed_dict_test)
 
         e = e.reshape([-1])
         f = f.reshape([-1])
         v = v.reshape([-1])
+        
+        print("hahahhha")
+        print("e  = ", e)
+        print("ae = ", ae)
+        [net_deriv] = tf.gradients (atom_ener, t_aparam)
+        print("net_deriv = ", net_deriv)
+        [d] = sess.run([net_deriv],  feed_dict = feed_dict_test)
+        print("d = ", d)
+        
         refe = [61.35473702079649]
         reff = [7.789591210641927388e-02,9.411176646369459609e-02,3.785806413688173194e-03,1.430830954178063386e-01,1.146964190520970150e-01,-1.320340288927138173e-02,-7.308720494747594776e-02,6.508269338140809657e-02,5.398739145542804643e-04,5.863268336973800898e-02,-1.603409523950408699e-01,-5.083084610994957619e-03,-2.551569799443983988e-01,3.087934885732580501e-02,1.508590526622844222e-02,4.863249399791078065e-02,-1.444292753594846324e-01,-1.125098094204559241e-03]
         refv = [-6.069498397488943819e-01,1.101778888191114192e-01,1.981907430646132409e-02,1.101778888191114608e-01,-3.315612988100872793e-01,-5.999739184898976799e-03,1.981907430646132756e-02,-5.999739184898974197e-03,-1.198656608172396325e-03]
@@ -117,3 +126,6 @@ class TestModel(unittest.TestCase):
             self.assertAlmostEqual(f[ii], reff[ii], places = places)
         for ii in range(v.size) :
             self.assertAlmostEqual(v[ii], refv[ii], places = places)
+
+if __name__ == '__main__':
+    unittest.main()

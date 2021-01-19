@@ -36,6 +36,7 @@ class ProdVirialSeAOp : public OpKernel {
 
     void Compute(OpKernelContext* context) override {
         // Grab the input tensor
+        cout << "~/deepmd-kit/source/op/prod_virial_se_a_multi_device.cc +39" << endl;
         int context_input_index = 0;
         const Tensor& net_deriv_tensor	= context->input(context_input_index++);
         const Tensor& in_deriv_tensor	= context->input(context_input_index++);

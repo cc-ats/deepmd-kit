@@ -32,6 +32,7 @@ public:
 
   void Compute(OpKernelContext* context) override {
     // Grab the input tensor
+    cout << "~/deepmd-kit/source/op/prod_virial_se_a_grad.cc +35" << endl;
     int context_input_index = 0;
     const Tensor& grad_tensor		= context->input(context_input_index++);
     const Tensor& net_deriv_tensor	= context->input(context_input_index++);
@@ -61,6 +62,7 @@ public:
     int nloc = natoms(0);
     int ndescrpt = net_deriv_tensor.shape().dim_size(1) / nloc;
     int nnei = nlist_tensor.shape().dim_size(1) / nloc;
+    cout << "~/deepmd-kit/source/op/prod_virial_se_a_grad.cc +64" << endl;
 
     // check the sizes
     OP_REQUIRES (context, (nframes == grad_shape.dim_size(0)),		errors::InvalidArgument ("number of frames should match"));

@@ -8,6 +8,7 @@ from deepmd.env import op_grads_module
      
 @ops.RegisterGradient("ProdVirialSeA")
 def _prod_virial_se_a_grad_cc (op, grad, grad_atom):    
+    print("~/deepmd-kit/source/op/_prod_virial_se_a_grad.py +11")
     net_grad =  op_grads_module.prod_virial_se_a_grad (grad, 
                                                         op.inputs[0], 
                                                         op.inputs[1], 
