@@ -48,7 +48,7 @@ def j_must_have (jdata, key) :
     else :
         return jdata[key]
 
-def train (args) :
+def train_(args) :
     # load json database
     jdata = j_loader(args.INPUT)
 
@@ -85,6 +85,19 @@ def train (args) :
     else :
         # serial training
         _do_work(jdata, run_opt)
+
+def train(is_distrib=False):
+    model = NNPTrainer(jdata, run_opt = run_opt)
+    data = DeepmdDataSystem(systems, 
+                            batch_size, 
+                            test_size, 
+                            rcut, 
+                            set_prefix=set_pfx, 
+                            type_map = ipt_type_map, 
+                            modifier = modifier)
+    model.train (data)
+
+
 
 def _do_work(jdata, run_opt):
     # init the model

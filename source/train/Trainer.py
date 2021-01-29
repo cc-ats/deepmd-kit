@@ -40,8 +40,26 @@ def _is_subdir(path, directory):
     relative = os.path.relpath(path, directory) + os.sep
     return not relative.startswith(os.pardir + os.sep)
 
+class AbstractTrainer(object):
+    def __init__(self):
+        pass
 
-class NNPTrainer (object):
+    def build(self):
+        pass
+
+    def train(self):
+        pass
+
+    def get_global_step(self):
+        pass
+
+    def print_head(self):
+        pass
+
+    def test_on_the_fly(self):
+        pass
+
+class NNPTrainer (AbstractTrainer):
     def __init__(self, 
                  jdata, 
                  run_opt):
