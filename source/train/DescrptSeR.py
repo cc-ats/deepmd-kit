@@ -50,23 +50,37 @@ class DescrptSeR (AbstractDescrpt):
         self.davg = None
         self.dstd = None
 
+        # descrpt config
+        self.sel_a = [ 0 for ii in range(len(self.sel_r)) ]
+        self.ntypes = len(self.sel_r)
+        # numb of neighbors and numb of descrptors
+        self.nnei_a = np.cumsum(self.sel_a)[-1]
+        self.nnei_r = np.cumsum(self.sel_r)[-1]
+        self.nnei = self.nnei_a + self.nnei_r
+        self.ndescrpt_a = self.nnei_a * 4
+        self.ndescrpt_r = self.nnei_r * 1
+        self.ndescrpt = self.nnei_r
+        self.useBN = False
+        self.davg = None
+        self.dstd = None
+
         self.place_holders = {}
         avg_zero = np.zeros([self.ntypes,self.ndescrpt]).astype(global_np_float_precision)
         std_ones = np.ones ([self.ntypes,self.ndescrpt]).astype(global_np_float_precision)
         sub_graph = tf.Graph()
         with sub_graph.as_default():
             name_pfx = 'd_ser_'
-            for ii in ['coord', 'box:
+            for ii in ['coord', 'box']:
                 self.place_holders[ii] = tf.placeholder(global_np_float_precision, [None, None], name = name_pfx+'t_'+ii)
-            self.place_holders['type = tf.placeholder(tf.int32, [None, None], name=name_pfx+'t_type')
-            self.place_holders['natoms_vec = tf.placeholder(tf.int32, [self.ntypes+2], name=name_pfx+'t_natoms')
-            self.place_holders['default_mesh = tf.placeholder(tf.int32, [None], name=name_pfx+'t_mesh')
+            self.place_holders['type'] = tf.placeholder(tf.int32, [None, None], name=name_pfx+'t_type')
+            self.place_holders['natoms_vec'] = tf.placeholder(tf.int32, [self.ntypes+2], name=name_pfx+'t_natoms')
+            self.place_holders['default_mesh'] = tf.placeholder(tf.int32, [None], name=name_pfx+'t_mesh')
             self.stat_descrpt, descrpt_deriv, rij, nlist \
-                = op_module.descrpt_se_r(self.place_holders['coord,
-                                         self.place_holders['type,
-                                         self.place_holders['natoms_vec,
-                                         self.place_holders['box,
-                                         self.place_holders['default_mesh,
+                = op_module.descrpt_se_r(self.place_holders['coord'],
+                                         self.place_holders['type'],
+                                         self.place_holders['natoms_vec'],
+                                         self.place_holders['box'],
+                                         self.place_holders['default_mesh'],
                                          tf.constant(avg_zero),
                                          tf.constant(std_ones),
                                          rcut = self.rcut,
@@ -276,11 +290,11 @@ class DescrptSeR (AbstractDescrpt):
         dd_all \
             = self.sub_sess.run(self.stat_descrpt, 
                                 feed_dict = {
-                                    self.place_holders['coord: data_coord,
-                                    self.place_holders['type: data_atype,
-                                    self.place_holders['natoms_vec: natoms_vec,
-                                    self.place_holders['box: data_box,
-                                    self.place_holders['default_mesh: mesh,
+                                    self.place_holders['coord']: data_coord,
+                                    self.place_holders['type']: data_atype,
+                                    self.place_holders['natoms_vec']: natoms_vec,
+                                    self.place_holders['box']: data_box,
+                                    self.place_holders['default_mesh']: mesh,
                                 })
         natoms = natoms_vec
         dd_all = np.reshape(dd_all, [-1, self.ndescrpt * natoms[0]])
