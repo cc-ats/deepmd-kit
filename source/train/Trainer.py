@@ -44,6 +44,9 @@ class AbstractTrainer(object):
     def __init__(self):
         pass
 
+    def init_param(self):
+        pass
+
     def build(self):
         pass
 
@@ -60,11 +63,164 @@ class AbstractTrainer(object):
         pass
 
 class NNPTrainer (AbstractTrainer):
-    def __init__(self, 
-                 jdata, 
-                 run_opt):
+    def __init__(self, jdata, run_opt):
         self.run_opt = run_opt
-        self._init_param(jdata)
+
+    def init_param(self, descrpt_obj, fitting_obj):
+        # descriptor
+        assert isinstance(descrpt_obj, AbstractDescrpt)
+        
+
+        # fitting net
+        assert isinstance(fitting_obj, AbstractFitting)
+        if isinstance(fitting_obj, EnerFitting):
+            pass
+        elif isinstance(fitting_obj, WFCFitting):
+            pass
+        elif isinstance(fitting_obj, DipoleFitting):
+            assert isinstance(descrpt_obj, AbstractDescrpt)    
+        elif isinstance(fitting_obj, PolarFitting):
+            assert isinstance(descrpt_obj, ) or isinstance(descrpt_obj, )
+        elif isinstance(fitting_obj, GlobalPolarFitting):
+            assert isinstance(descrpt_obj, )
+
+
+        self.descrpt = descrpt_obj
+        self.fitting = fitting_obj
+
+
+        try: 
+            fitting_type = fitting_param['type']
+        except:
+            fitting_type = 'ener'
+        if fitting_type == 'ener':
+            self.fitting = EnerFitting(fitting_param, self.descrpt)
+        elif fitting_type == 'wfc':            
+            self.fitting = WFCFitting(fitting_param, self.descrpt)
+        elif fitting_type == 'dipole':
+            if descrpt_type == 'se_a':
+                self.fitting = DipoleFittingSeA(fitting_param, self.descrpt)
+            else :
+                raise RuntimeError('fitting dipole only supports descrptors: se_a')
+        elif fitting_type == 'polar':
+            if descrpt_type == 'loc_frame':
+                self.fitting = PolarFittingLocFrame(fitting_param, self.descrpt)
+            elif descrpt_type == 'se_a':
+                self.fitting = PolarFittingSeA(fitting_param, self.descrpt)
+            else :
+                raise RuntimeError('fitting polar only supports descrptors: loc_frame and se_a')
+        elif fitting_type == 'global_polar':
+            if descrpt_type == 'se_a':
+                self.fitting = GlobalPolarFittingSeA(fitting_param, self.descrpt)
+            else :
+                raise RuntimeError('fitting global_polar only supports descrptors: loc_frame and se_a')
+        else :
+            raise RuntimeError('unknow fitting type ' + fitting_type)
+
+        # init model
+        # infer model type by fitting_type
+        if fitting_type == Model.model_type:
+            self.model = Model(model_param, self.descrpt, self.fitting)
+        elif fitting_type == 'wfc':
+            self.model = WFCModel(model_param, self.descrpt, self.fitting)
+        elif fitting_type == 'dipole':
+            self.model = DipoleModel(model_param, self.descrpt, self.fitting)
+        elif fitting_type == 'polar':
+            self.model = PolarModel(model_param, self.descrpt, self.fitting)
+        elif fitting_type == 'global_polar':
+            self.model = GlobalPolarModel(model_param, self.descrpt, self.fitting)
+        else :
+            raise RuntimeError('get unknown fitting type when building model')
+
+        # learning rate
+        lr_param = j_must_have(jdata, 'learning_rate')
+        try: 
+            lr_type = lr_param['type']
+        except:
+            lr_type = 'exp'
+        if lr_type == 'exp':
+            self.lr = LearningRateExp(lr_param)
+        else :
+            raise RuntimeError('unknown learning_rate type ' + lr_type)        
+
+        # loss
+        # infer loss type by fitting_type
+        try :
+            loss_param = jdata['loss']
+            loss_type = loss_param.get('type', 'ener')
+        except:
+            loss_param = None
+            loss_type = 'ener'
+
+        if fitting_type == 'ener':
+            if loss_type == 'ener':
+                self.loss = EnerStdLoss(loss_param, starter_learning_rate = self.lr.start_lr())
+            elif loss_type == 'ener_dipole':
+                self.loss = EnerDipoleLoss(loss_param, starter_learning_rate = self.lr.start_lr())
+            else:
+                raise RuntimeError('unknow loss type')
+        elif fitting_type == 'wfc':
+            self.loss = TensorLoss(loss_param, 
+                                   model = self.model, 
+                                   tensor_name = 'wfc',
+                                   tensor_size = self.model.get_out_size(),
+                                   label_name = 'wfc')
+        elif fitting_type == 'dipole':
+            self.loss = TensorLoss(loss_param, 
+                                   model = self.model, 
+                                   tensor_name = 'dipole',
+                                   tensor_size = 3,
+                                   label_name = 'dipole')
+        elif fitting_type == 'polar':
+            self.loss = TensorLoss(loss_param, 
+                                   model = self.model, 
+                                   tensor_name = 'polar',
+                                   tensor_size = 9,
+                                   label_name = 'polarizability')
+        elif fitting_type == 'global_polar':
+            self.loss = TensorLoss(loss_param, 
+                                   model = self.model, 
+                                   tensor_name = 'global_polar',
+                                   tensor_size = 9,
+                                   atomic = False,
+                                   label_name = 'polarizability')
+        else :
+            raise RuntimeError('get unknown fitting type when building loss function')
+
+        # training
+        training_param = j_must_have(jdata, 'training')
+
+        # ! first .add() altered by Marián Rynik
+        tr_args = ClassArg()\
+                  .add('numb_test',     [int, list, str],    default = 1)\
+                  .add('disp_file',     str,    default = 'lcurve.out')\
+                  .add('disp_freq',     int,    default = 100)\
+                  .add('save_freq',     int,    default = 1000)\
+                  .add('save_ckpt',     str,    default = 'model.ckpt')\
+                  .add('display_in_training', bool, default = True)\
+                  .add('timing_in_training',  bool, default = True)\
+                  .add('profiling',     bool,   default = False)\
+                  .add('profiling_file',str,    default = 'timeline.json')\
+                  .add('sys_probs',   list    )\
+                  .add('auto_prob_style', str, default = "prob_sys_size")
+        tr_data = tr_args.parse(training_param)
+        # not needed
+        # self.numb_test = tr_data['numb_test']
+        self.disp_file = tr_data['disp_file']
+        self.disp_freq = tr_data['disp_freq']
+        self.save_freq = tr_data['save_freq']
+        self.save_ckpt = tr_data['save_ckpt']
+        self.display_in_training = tr_data['display_in_training']
+        self.timing_in_training  = tr_data['timing_in_training']
+        self.profiling = tr_data['profiling']
+        self.profiling_file = tr_data['profiling_file']
+        self.sys_probs = tr_data['sys_probs']        
+        self.auto_prob_style = tr_data['auto_prob_style']        
+        self.useBN = False
+        if fitting_type == 'ener' and  self.fitting.get_numb_fparam() > 0 :
+            self.numb_fparam = self.fitting.get_numb_fparam()
+        else :
+            self.numb_fparam = 0
 
     def _init_param(self, jdata):
         # model config        

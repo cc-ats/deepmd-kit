@@ -6,7 +6,38 @@ from deepmd.RunOptions import global_np_float_precision
 from deepmd.env import op_module
 from deepmd.env import default_tf_session_config
 
-class DescrptLocFrame () :
+class AbstractDescrpt(object):
+    def __init__(self):
+        pass
+
+    def init_param_jdata (self):
+        pass
+
+    def get_rcut (self) :
+        pass
+
+    def get_ntypes (self) :
+        pass
+
+    def get_dim_out (self) :
+        pass
+
+    def get_nlist (self) :
+        pass
+
+    def compute_input_stats (self) :
+        pass
+
+    def build (self) :
+        pass
+
+    def get_rot_mat (self) :
+        pass
+
+    def prod_force_virial (self) :
+        pass
+
+class DescrptLocFrame (AbstractDescrpt) :
     def __init__(self, jdata):
         args = ClassArg()\
                .add('sel_a',    list,   must = True) \

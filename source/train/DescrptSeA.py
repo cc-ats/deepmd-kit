@@ -6,7 +6,9 @@ from deepmd.RunOptions import global_np_float_precision
 from deepmd.env import op_module
 from deepmd.env import default_tf_session_config
 
-class DescrptSeA ():
+from DescrptLocFrame import AbstractDescrpt
+
+class DescrptSeA (AbstractDescrpt):
     def __init__ (self, jdata):
         args = ClassArg()\
                .add('sel',      list,   must = True) \

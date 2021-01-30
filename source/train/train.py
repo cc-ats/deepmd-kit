@@ -86,8 +86,9 @@ def train_(args) :
         # serial training
         _do_work(jdata, run_opt)
 
-def train(is_distrib=False):
-    model = NNPTrainer(jdata, run_opt = run_opt)
+def train(trainer, data, descrpt, loss_func, is_distrib=False):
+    assert isinstance(trainer, AbstractTrainer)
+    assert isinstance(data,    AbstractTrainer)
     data = DeepmdDataSystem(systems, 
                             batch_size, 
                             test_size, 

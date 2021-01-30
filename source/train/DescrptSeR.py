@@ -6,8 +6,13 @@ from deepmd.RunOptions import global_np_float_precision
 from deepmd.env import op_module
 from deepmd.env import default_tf_session_config
 
-class DescrptSeR ():
-    def __init__ (self, jdata):
+from DescrptLocFrame import AbstractDescrpt
+
+class DescrptSeR (AbstractDescrpt):
+    def __init__ (self):
+        pass
+
+    def init_param_jdata (self, jdata):
         args = ClassArg()\
                .add('sel',      list,   must = True) \
                .add('rcut',     float,  default = 6.0) \

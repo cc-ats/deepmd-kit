@@ -6,7 +6,9 @@ from deepmd.DescrptSeA import DescrptSeA
 from deepmd.DescrptSeR import DescrptSeR
 from deepmd.env import op_module
 
-class DescrptSeAR ():
+from DescrptLocFrame import AbstractDescrpt
+
+class DescrptSeAR (AbstractDescrpt):
     def __init__ (self, jdata):
         args = ClassArg()\
                .add('a',      dict,   must = True) \
