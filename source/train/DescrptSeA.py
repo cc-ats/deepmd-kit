@@ -9,40 +9,35 @@ from deepmd.env import default_tf_session_config
 from DescrptLocFrame import AbstractDescrpt
 
 class DescrptSeA (AbstractDescrpt):
-    def __init__ (self, jdata):
-        args = ClassArg()\
-               .add('sel',      list,   must = True) \
-               .add('rcut',     float,  default = 6.0) \
-               .add('rcut_smth',float,  default = 0.5) \
-               .add('neuron',   list,   default = [10, 20, 40]) \
-               .add('axis_neuron', int, default = 4, alias = 'n_axis_neuron') \
-               .add('resnet_dt',bool,   default = False) \
-               .add('trainable',bool,   default = True) \
-               .add('seed',     int) \
-               .add('type_one_side', bool, default = False) \
-               .add('exclude_types', list, default = []) \
-               .add('set_davg_zero', bool, default = False) \
-               .add('activation_function', str,    default = 'tanh') \
-               .add('precision', str, default = "default")
-        class_data = args.parse(jdata)
-        self.sel_a = class_data['sel']
-        self.rcut_r = class_data['rcut']
-        self.rcut_r_smth = class_data['rcut_smth']
-        self.filter_neuron = class_data['neuron']
-        self.n_axis_neuron = class_data['axis_neuron']
-        self.filter_resnet_dt = class_data['resnet_dt']
-        self.seed = class_data['seed']
-        self.trainable = class_data['trainable']
-        self.filter_activation_fn = get_activation_func(class_data['activation_function'])
-        self.filter_precision = get_precision(class_data['precision'])
-        exclude_types = class_data['exclude_types']
+    def __init__ (self):
+        pass
+
+    def init_param(self, sel, rcut=6.0, rcut_smth=0.5, neuron=[10,20,40],
+                         axis_neuron=4, resnet_dt=False,  trainable=True,
+                         seed=None, type_one_side=False, exclude_types=[],
+                         set_davg_zero=False, 
+                         activation_function='tanh',
+                         precision="default"
+                         ):
+        self.sel_a            = sel
+        self.rcut_r           = rcut
+        self.rcut_r_smth      = rcut_smth
+        self.filter_neuron    = neuron
+        self.n_axis_neuron    = axis_neuron
+        self.filter_resnet_dt = resnet_dt
+        self.seed             = seed
+        self.trainable        = trainable
+
+        self.filter_activation_fn = get_activation_func(activation_function)
+        self.filter_precision     = get_precision(precision)
+
         self.exclude_types = set()
         for tt in exclude_types:
             assert(len(tt) == 2)
             self.exclude_types.add((tt[0], tt[1]))
             self.exclude_types.add((tt[1], tt[0]))
-        self.set_davg_zero = class_data['set_davg_zero']
-        self.type_one_side = class_data['type_one_side']
+        self.set_davg_zero = set_davg_zero
+        self.type_one_side = type_one_side
         if self.type_one_side and len(exclude_types) != 0:
             raise RuntimeError('"type_one_side" is not compatible with "exclude_types"')
 
@@ -68,17 +63,17 @@ class DescrptSeA (AbstractDescrpt):
         sub_graph = tf.Graph()
         with sub_graph.as_default():
             name_pfx = 'd_sea_'
-            for ii in ['coord', 'box']:
+            for ii in ['coord', 'box:
                 self.place_holders[ii] = tf.placeholder(global_np_float_precision, [None, None], name = name_pfx+'t_'+ii)
-            self.place_holders['type'] = tf.placeholder(tf.int32, [None, None], name=name_pfx+'t_type')
-            self.place_holders['natoms_vec'] = tf.placeholder(tf.int32, [self.ntypes+2], name=name_pfx+'t_natoms')
-            self.place_holders['default_mesh'] = tf.placeholder(tf.int32, [None], name=name_pfx+'t_mesh')
+            self.place_holders['type = tf.placeholder(tf.int32, [None, None], name=name_pfx+'t_type')
+            self.place_holders['natoms_vec = tf.placeholder(tf.int32, [self.ntypes+2], name=name_pfx+'t_natoms')
+            self.place_holders['default_mesh = tf.placeholder(tf.int32, [None], name=name_pfx+'t_mesh')
             self.stat_descrpt, descrpt_deriv, rij, nlist \
-                = op_module.descrpt_se_a(self.place_holders['coord'],
-                                         self.place_holders['type'],
-                                         self.place_holders['natoms_vec'],
-                                         self.place_holders['box'],
-                                         self.place_holders['default_mesh'],
+                = op_module.descrpt_se_a(self.place_holders['coord,
+                                         self.place_holders['type,
+                                         self.place_holders['natoms_vec,
+                                         self.place_holders['box,
+                                         self.place_holders['default_mesh,
                                          tf.constant(avg_zero),
                                          tf.constant(std_ones),
                                          rcut_a = self.rcut_a,
@@ -87,6 +82,50 @@ class DescrptSeA (AbstractDescrpt):
                                          sel_a = self.sel_a,
                                          sel_r = self.sel_r)
         self.sub_sess = tf.Session(graph = sub_graph, config=default_tf_session_config)
+
+    def init_param_jdata(self, jdata):
+        args = ClassArg()\
+               .add('sel',      list,   must = True) \
+               .add('rcut',     float,  default = 6.0) \
+               .add('rcut_smth',float,  default = 0.5) \
+               .add('neuron',   list,   default = [10, 20, 40]) \
+               .add('axis_neuron', int, default = 4, alias = 'n_axis_neuron') \
+               .add('resnet_dt',bool,   default = False) \
+               .add('trainable',bool,   default = True) \
+               .add('seed',     int) \
+               .add('type_one_side', bool, default = False) \
+               .add('exclude_types', list, default = []) \
+               .add('set_davg_zero', bool, default = False) \
+               .add('activation_function', str,    default = 'tanh') \
+               .add('precision', str, default = "default")
+
+        class_data = args.parse(jdata)
+        sel              = class_data['sel']
+        rcut_r           = class_data['rcut']
+        rcut_r_smth      = class_data['rcut_smth']
+        filter_neuron    = class_data['neuron']
+        n_axis_neuron    = class_data['axis_neuron']
+        filter_resnet_dt = class_data['resnet_dt']
+        seed             = class_data['seed']
+        trainable        = class_data['trainable']
+        type_one_side    = class_data['type_one_side']
+        activation_function = class_data['activation_function']
+        precision           = class_data['precision']
+        exclude_types       = class_data['exclude_types']
+        set_davg_zero       = class_data['set_davg_zero']
+        type_one_side       = class_data['type_one_side']
+
+        self.init_param(sel, rcut=rcut_r, rcut_smth=rcut_r_smth,        
+                             neuron=filter_neuron, axis_neuron=n_axis_neuron,
+                             resnet_dt=filter_resnet_dt,  
+                             trainable=trainable,
+                             seed=seed, type_one_side=type_one_side,
+                             exclude_types=exclude_types,
+                             activation_function=activation_function,
+                             precision=precision,
+                             set_davg_zero=set_davg_zero,
+                             type_one_side=type_one_side
+                        )
 
 
     def get_rcut (self) :
@@ -285,11 +324,11 @@ class DescrptSeA (AbstractDescrpt):
         dd_all \
             = self.sub_sess.run(self.stat_descrpt, 
                                 feed_dict = {
-                                    self.place_holders['coord']: data_coord,
-                                    self.place_holders['type']: data_atype,
-                                    self.place_holders['natoms_vec']: natoms_vec,
-                                    self.place_holders['box']: data_box,
-                                    self.place_holders['default_mesh']: mesh,
+                                    self.place_holders['coord: data_coord,
+                                    self.place_holders['type: data_atype,
+                                    self.place_holders['natoms_vec: natoms_vec,
+                                    self.place_holders['box: data_box,
+                                    self.place_holders['default_mesh: mesh,
                                 })
         natoms = natoms_vec
         dd_all = np.reshape(dd_all, [-1, self.ndescrpt * natoms[0]])
