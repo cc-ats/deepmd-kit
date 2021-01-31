@@ -338,20 +338,22 @@ class EnerDipoleLoss (AbstractLossFunc) :
 
 
 class TensorLoss (AbstractLossFunc) :
-    def __init__ (self, jdata, **kwarg) :
+    def __init__ (self) :
+        pass
+
+    def init_param (self, model, tensor_name, tensor_size, label_name, atomic=True, scale=1.0) :
         try:
-            model = kwarg['model']
+            model    = model
             type_sel = model.get_sel_type()
         except :
             type_sel = None
-        self.tensor_name = kwarg['tensor_name']
-        self.tensor_size = kwarg['tensor_size']
-        self.label_name = kwarg['label_name']
-        self.atomic = kwarg.get('atomic', True)
-        if jdata is not None:
-            self.scale = jdata.get('scale', 1.0)
-        else:
-            self.scale = 1.0
+        
+        self.tensor_name = tensor_name
+        self.tensor_size = tensor_size
+        self.label_name  = label_name
+        self.atomic      = atomic
+        self.scale       = scale
+
         # data required
         add_data_requirement(self.label_name, 
                              self.tensor_size, 
@@ -359,6 +361,24 @@ class TensorLoss (AbstractLossFunc) :
                              must=True, 
                              high_prec=False, 
                              type_sel = type_sel)
+
+    def init_param_jdata(self, jdata, **kwarg) :
+        try:
+            model = kwarg['model']
+            type_sel = model.get_sel_type()
+        except :
+            type_sel = None
+
+        tensor_name = kwarg['tensor_name']
+        tensor_size = kwarg['tensor_size']
+        label_name  = kwarg['label_name']
+        atomic      = kwarg.get('atomic', True)
+        if jdata is not None:
+            scale = jdata.get('scale', 1.0)
+        else:
+            scale = 1.0
+        
+        self.init_param(model, tensor_name, tensor_size, label_name, atomic=atomic, scale=scale)
 
     def build (self, 
                learning_rate,
