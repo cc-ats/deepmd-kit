@@ -2,7 +2,7 @@ import numpy as np
 from deepmd.env import tf
 from deepmd.common import ClassArg
 
-class AbstractLearning(object):
+class AbstractLearningRate(object):
     def __init__(self):
         pass
 
@@ -21,7 +21,7 @@ class AbstractLearning(object):
     def value(self):
         pass
 
-class LearningRateExp (AbstractLearning) :
+class LearningRateExp (AbstractLearningRate) :
     def __init__ (self) :
         pass
 
@@ -57,7 +57,7 @@ class LearningRateExp (AbstractLearning) :
             self.decay_rate_ = np.exp(np.log(self.stop_lr_ / self.start_lr_) / (stop_batch / self.decay_steps_))
             
         return tf.train.exponential_decay(self.start_lr_, global_step, self.decay_steps_, self.decay_rate_, staircase=True)
-        
+
     def start_lr(self) :
         return self.start_lr_
 

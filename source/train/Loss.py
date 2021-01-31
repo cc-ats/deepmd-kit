@@ -5,7 +5,6 @@ from deepmd.common import ClassArg, add_data_requirement
 from deepmd.RunOptions import global_cvt_2_tf_float
 from deepmd.RunOptions import global_cvt_2_ener_float
 
-
 class AbstractLossFunc(object):
     def __init__(self):
         pass

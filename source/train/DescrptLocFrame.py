@@ -10,14 +10,12 @@ class AbstractDescrpt(object):
     def __init__(self):
         pass
 
-    def init_param_jdata (self):
-        pass
-
-    def init_param_jdata (self):
+    @classmethod
+    def init_param_jdata (self, jdata):
         pass
 
     def get_rcut (self) :
-        pass
+        raise NotImplementedError("")
 
     def get_ntypes (self) :
         pass
@@ -38,6 +36,7 @@ class AbstractDescrpt(object):
         pass
 
     def prod_force_virial (self) :
+        # work in op ... 
         pass
 
 class DescrptLocFrame (AbstractDescrpt) :

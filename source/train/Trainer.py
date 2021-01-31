@@ -66,8 +66,12 @@ class AbstractTrainer(object):
         pass
 
 class NNPTrainer (AbstractTrainer):
-    def __init__(self, jdata, run_opt):
-        self.run_opt = run_opt
+    # def __init__(self, jdata, run_opt):
+    #     self.run_opt = run_opt
+
+    def __init__(self, **kwarg):
+        if kwarg:
+
 
     def init_param(self, descrpt_obj, fitting_obj):
         # descriptor
