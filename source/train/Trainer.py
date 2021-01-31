@@ -47,6 +47,9 @@ class AbstractTrainer(object):
     def init_param(self):
         pass
 
+    def init_param_jdata(self):
+        pass
+
     def build(self):
         pass
 
