@@ -53,14 +53,17 @@ class AbstractDescrpt(ABC):
         pass
 
 class DescrptLocFrame (AbstractDescrpt) :
-    def __init__(self):
-        pass
-
-    def init_param(self, sel_a, sel_r, axis_rule, rcut=6.0):
-        self.sel_a     = sel_a
-        self.sel_r     = sel_r
-        self.axis_rule = axis_rule
-        self.rcut_r    = rcut
+    def __init__(self, jdata):
+        args = ClassArg()\
+               .add('sel_a',    list,   must = True) \
+               .add('sel_r',    list,   must = True) \
+               .add('rcut',     float,  default = 6.0) \
+               .add('axis_rule',list,   must = True)
+        class_data = args.parse(jdata)
+        self.sel_a = sel_a
+        self.sel_r = class_data['sel_r']
+        self.axis_rule = class_data['axis_rule']
+        self.rcut_r = class_data['rcut']
         # ntypes and rcut_a === -1
         self.ntypes = len(self.sel_a)
         assert(self.ntypes == len(self.sel_r))
@@ -100,19 +103,6 @@ class DescrptLocFrame (AbstractDescrpt) :
                                      sel_r = self.sel_r,
                                      axis_rule = self.axis_rule)
         self.sub_sess = tf.Session(graph = sub_graph, config=default_tf_session_config)
-
-    def init_param_jdata(self, jdata):
-        args = ClassArg()\
-               .add('sel_a',    list,   must = True) \
-               .add('sel_r',    list,   must = True) \
-               .add('rcut',     float,  default = 6.0) \
-               .add('axis_rule',list,   must = True)
-        class_data = args.parse(jdata)
-        sel_a     = class_data['sel_a']
-        sel_r     = class_data['sel_r']
-        axis_rule = class_data['axis_rule']
-        rcut_r    = class_data['rcut']
-        self.init_param(sel_a, sel_r, axis_rule, rcut=rcut_r)
 
 
     def get_rcut (self) :
@@ -276,5 +266,3 @@ class DescrptLocFrame (AbstractDescrpt) :
 
     def _compute_std (self,sumv2, sumv, sumn) :
         return np.sqrt(sumv2/sumn - np.multiply(sumv/sumn, sumv/sumn))
-
-    
