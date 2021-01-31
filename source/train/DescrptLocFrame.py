@@ -1,40 +1,53 @@
+from abc import ABC, abstractmethod 
+
 import numpy as np
 from deepmd.env import tf
+
 from deepmd.common import ClassArg
 from deepmd.RunOptions import global_tf_float_precision
 from deepmd.RunOptions import global_np_float_precision
 from deepmd.env import op_module
 from deepmd.env import default_tf_session_config
 
-class AbstractDescrpt(object):
+class AbstractDescrpt(ABC):
+    @abstractmethod
     def __init__(self):
+        # maybe we should add something here
         pass
 
-    @classmethod
-    def init_param_jdata (self, jdata):
+    @abstractmethod
+    def init_param_jdata (self):
         pass
 
+    @abstractmethod
     def get_rcut (self) :
-        raise NotImplementedError("")
+        pass
 
+    @abstractmethod
     def get_ntypes (self) :
         pass
 
+    @abstractmethod
     def get_dim_out (self) :
         pass
 
+    @abstractmethod
     def get_nlist (self) :
         pass
 
+    @abstractmethod
     def compute_input_stats (self) :
         pass
 
+    @abstractmethod
     def build (self) :
         pass
 
+    @abstractmethod
     def get_rot_mat (self) :
         pass
 
+    @abstractmethod
     def prod_force_virial (self) :
         # work in op ... 
         pass
