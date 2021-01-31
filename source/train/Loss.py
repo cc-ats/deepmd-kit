@@ -5,9 +5,63 @@ from deepmd.common import ClassArg, add_data_requirement
 from deepmd.RunOptions import global_cvt_2_tf_float
 from deepmd.RunOptions import global_cvt_2_ener_float
 
-class EnerStdLoss () :
-    def __init__ (self, jdata, **kwarg) :
-        self.starter_learning_rate = kwarg['starter_learning_rate']
+
+class AbstractLossFunc(object):
+    def __init__(self):
+        pass
+
+    def init_param(self):
+        pass
+
+    def init_param_jdata(self):
+        pass
+
+    def build(self):
+        pass
+
+    def print_header(self):
+        pass
+
+    def print_on_training(self):
+        pass
+
+class EnerStdLoss (AbstractLossFunc) :
+    def __init__ (self) :
+        pass
+
+    def init_param(self, starter_learning_rate, 
+                         start_pref_e=0.02, limit_pref_e=1.00, 
+                         start_pref_f=1000, limit_pref_f=1.0,
+                         start_pref_v=0.0,  limit_pref_v=0.0,
+                         start_pref_ae=0.0, limit_pref_ae=0.0,
+                         start_pref_pf=0.0, limit_pref_pf=0.0,
+                         relative_f=0.0):
+        self.starter_learning_rate = starter_learning_rate
+        self.start_pref_e  = start_pref_e
+        self.limit_pref_e  = limit_pref_e
+        self.start_pref_f  = start_pref_f
+        self.limit_pref_f  = limit_pref_f
+        self.start_pref_v  = start_pref_v
+        self.limit_pref_v  = limit_pref_v
+        self.start_pref_ae = start_pref_ae
+        self.limit_pref_ae = limit_pref_ae
+        self.start_pref_pf = start_pref_pf
+        self.limit_pref_pf = limit_pref_pf
+        self.relative_f    = relative_f
+        self.has_e = (self.start_pref_e != 0 or self.limit_pref_e != 0)
+        self.has_f = (self.start_pref_f != 0 or self.limit_pref_f != 0)
+        self.has_v = (self.start_pref_v != 0 or self.limit_pref_v != 0)
+        self.has_ae = (self.start_pref_ae != 0 or self.limit_pref_ae != 0)
+        self.has_pf = (self.start_pref_pf != 0 or self.limit_pref_pf != 0)
+        # data required
+        add_data_requirement('energy', 1, atomic=False, must=False, high_prec=True)
+        add_data_requirement('force',  3, atomic=True,  must=False, high_prec=False)
+        add_data_requirement('virial', 9, atomic=False, must=False, high_prec=False)
+        add_data_requirement('atom_ener', 1, atomic=True, must=False, high_prec=False)
+        add_data_requirement('atom_pref', 1, atomic=True, must=False, high_prec=False, repeat=3)
+
+    def init_param_jdata(self, jdata, **kwarg):
+        starter_learning_rate = kwarg['starter_learning_rate']
         args = ClassArg()\
             .add('start_pref_e',        float,  default = 0.02)\
             .add('limit_pref_e',        float,  default = 1.00)\
@@ -21,28 +75,26 @@ class EnerStdLoss () :
             .add('limit_pref_pf',       float,  default = 0)\
             .add('relative_f',          float)
         class_data = args.parse(jdata)
-        self.start_pref_e = class_data['start_pref_e']
-        self.limit_pref_e = class_data['limit_pref_e']
-        self.start_pref_f = class_data['start_pref_f']
-        self.limit_pref_f = class_data['limit_pref_f']
-        self.start_pref_v = class_data['start_pref_v']
-        self.limit_pref_v = class_data['limit_pref_v']
-        self.start_pref_ae = class_data['start_pref_ae']
-        self.limit_pref_ae = class_data['limit_pref_ae']
-        self.start_pref_pf = class_data['start_pref_pf']
-        self.limit_pref_pf = class_data['limit_pref_pf']
-        self.relative_f = class_data['relative_f']
-        self.has_e = (self.start_pref_e != 0 or self.limit_pref_e != 0)
-        self.has_f = (self.start_pref_f != 0 or self.limit_pref_f != 0)
-        self.has_v = (self.start_pref_v != 0 or self.limit_pref_v != 0)
-        self.has_ae = (self.start_pref_ae != 0 or self.limit_pref_ae != 0)
-        self.has_pf = (self.start_pref_pf != 0 or self.limit_pref_pf != 0)
-        # data required
-        add_data_requirement('energy', 1, atomic=False, must=False, high_prec=True)
-        add_data_requirement('force',  3, atomic=True,  must=False, high_prec=False)
-        add_data_requirement('virial', 9, atomic=False, must=False, high_prec=False)
-        add_data_requirement('atom_ener', 1, atomic=True, must=False, high_prec=False)
-        add_data_requirement('atom_pref', 1, atomic=True, must=False, high_prec=False, repeat=3)
+        start_pref_e = class_data['start_pref_e']
+        limit_pref_e = class_data['limit_pref_e']
+        start_pref_f = class_data['start_pref_f']
+        limit_pref_f = class_data['limit_pref_f']
+        start_pref_v = class_data['start_pref_v']
+        limit_pref_v = class_data['limit_pref_v']
+        start_pref_ae = class_data['start_pref_ae']
+        limit_pref_ae = class_data['limit_pref_ae']
+        start_pref_pf = class_data['start_pref_pf']
+        limit_pref_pf = class_data['limit_pref_pf']
+        relative_f = class_data['relative_f']
+
+        self.init_param(
+            starter_learning_rate, start_pref_e=start_pref_e, limit_pref_e=limit_pref_e,
+            start_pref_f=start_pref_f, limit_pref_f=limit_pref_f,
+            start_pref_v=start_pref_v, limit_pref_v=limit_pref_v,
+            start_pref_ae=start_pref_ae, limit_pref_ae=limit_pref_ae,
+            start_pref_pf=start_pref_pf, limit_pref_pf=limit_pref_pf,
+            relative_f=relative_f
+        )
 
     def build (self, 
                learning_rate,
@@ -174,22 +226,38 @@ class EnerStdLoss () :
         return print_str        
 
 
-class EnerDipoleLoss () :
-    def __init__ (self, jdata, **kwarg) :
-        self.starter_learning_rate = kwarg['starter_learning_rate']
+class EnerDipoleLoss (AbstractLossFunc) :
+    def __init__ (self) :
+        pass
+
+    def init_param (self, starter_learning_rate, start_pref_e=0.1, limit_pref_e=1.00, start_pref_ed=1.00, limit_pref_ed=1.00) :
+        self.starter_learning_rate = starter_learning_rate
+        self.start_pref_e          = start_pref_e
+        self.limit_pref_e          = limit_pref_e
+        self.start_pref_ed         = start_pref_ed
+        self.limit_pref_ed         = limit_pref_ed
+        # data required
+        add_data_requirement('energy', 1, atomic=False, must=True, high_prec=True)
+        add_data_requirement('energy_dipole', 3, atomic=False, must=True, high_prec=False)
+
+    def init_param_jdata (self, jdata, **kwarg) :
+        starter_learning_rate = kwarg['starter_learning_rate']
         args = ClassArg()\
             .add('start_pref_e',        float,  must = True, default = 0.1) \
             .add('limit_pref_e',        float,  must = True, default = 1.00)\
             .add('start_pref_ed',       float,  must = True, default = 1.00)\
             .add('limit_pref_ed',       float,  must = True, default = 1.00)
         class_data = args.parse(jdata)
-        self.start_pref_e = class_data['start_pref_e']
-        self.limit_pref_e = class_data['limit_pref_e']
-        self.start_pref_ed = class_data['start_pref_ed']
-        self.limit_pref_ed = class_data['limit_pref_ed']
-        # data required
-        add_data_requirement('energy', 1, atomic=False, must=True, high_prec=True)
-        add_data_requirement('energy_dipole', 3, atomic=False, must=True, high_prec=False)
+        
+        start_pref_e = class_data['start_pref_e']
+        limit_pref_e = class_data['limit_pref_e']
+        start_pref_ed = class_data['start_pref_ed']
+        limit_pref_ed = class_data['limit_pref_ed']
+
+        self.init_param(starter_learning_rate=starter_learning_rate,
+            start_pref_e=start_pref_e, limit_pref_e=limit_pref_e,
+            start_pref_ed=start_pref_ed, limit_pref_ed=limit_pref_ed
+            )
 
     def build (self, 
                learning_rate,
@@ -269,7 +337,7 @@ class EnerDipoleLoss () :
         return print_str        
 
 
-class TensorLoss () :
+class TensorLoss (AbstractLossFunc) :
     def __init__ (self, jdata, **kwarg) :
         try:
             model = kwarg['model']

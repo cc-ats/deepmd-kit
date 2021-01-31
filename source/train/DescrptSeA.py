@@ -63,17 +63,17 @@ class DescrptSeA (AbstractDescrpt):
         sub_graph = tf.Graph()
         with sub_graph.as_default():
             name_pfx = 'd_sea_'
-            for ii in ['coord', 'box:
+            for ii in ['coord', 'box']:
                 self.place_holders[ii] = tf.placeholder(global_np_float_precision, [None, None], name = name_pfx+'t_'+ii)
-            self.place_holders['type = tf.placeholder(tf.int32, [None, None], name=name_pfx+'t_type')
-            self.place_holders['natoms_vec = tf.placeholder(tf.int32, [self.ntypes+2], name=name_pfx+'t_natoms')
-            self.place_holders['default_mesh = tf.placeholder(tf.int32, [None], name=name_pfx+'t_mesh')
+            self.place_holders['type'] = tf.placeholder(tf.int32, [None, None], name=name_pfx+'t_type')
+            self.place_holders['natoms_vec'] = tf.placeholder(tf.int32, [self.ntypes+2], name=name_pfx+'t_natoms')
+            self.place_holders['default_mesh'] = tf.placeholder(tf.int32, [None], name=name_pfx+'t_mesh')
             self.stat_descrpt, descrpt_deriv, rij, nlist \
-                = op_module.descrpt_se_a(self.place_holders['coord,
-                                         self.place_holders['type,
-                                         self.place_holders['natoms_vec,
-                                         self.place_holders['box,
-                                         self.place_holders['default_mesh,
+                = op_module.descrpt_se_a(self.place_holders['coord'],
+                                         self.place_holders['type'],
+                                         self.place_holders['natoms_vec'],
+                                         self.place_holders['box'],
+                                         self.place_holders['default_mesh'],
                                          tf.constant(avg_zero),
                                          tf.constant(std_ones),
                                          rcut_a = self.rcut_a,
@@ -100,15 +100,15 @@ class DescrptSeA (AbstractDescrpt):
                .add('precision', str, default = "default")
 
         class_data = args.parse(jdata)
-        sel              = class_data['sel']
-        rcut_r           = class_data['rcut']
-        rcut_r_smth      = class_data['rcut_smth']
-        filter_neuron    = class_data['neuron']
-        n_axis_neuron    = class_data['axis_neuron']
-        filter_resnet_dt = class_data['resnet_dt']
-        seed             = class_data['seed']
-        trainable        = class_data['trainable']
-        type_one_side    = class_data['type_one_side']
+        sel                 = class_data['sel']
+        rcut_r              = class_data['rcut']
+        rcut_r_smth         = class_data['rcut_smth']
+        filter_neuron       = class_data['neuron']
+        n_axis_neuron       = class_data['axis_neuron']
+        filter_resnet_dt    = class_data['resnet_dt']
+        seed                = class_data['seed']
+        trainable           = class_data['trainable']
+        type_one_side       = class_data['type_one_side']
         activation_function = class_data['activation_function']
         precision           = class_data['precision']
         exclude_types       = class_data['exclude_types']
@@ -123,8 +123,7 @@ class DescrptSeA (AbstractDescrpt):
                              exclude_types=exclude_types,
                              activation_function=activation_function,
                              precision=precision,
-                             set_davg_zero=set_davg_zero,
-                             type_one_side=type_one_side
+                             set_davg_zero=set_davg_zero
                         )
 
 
@@ -324,11 +323,11 @@ class DescrptSeA (AbstractDescrpt):
         dd_all \
             = self.sub_sess.run(self.stat_descrpt, 
                                 feed_dict = {
-                                    self.place_holders['coord: data_coord,
-                                    self.place_holders['type: data_atype,
-                                    self.place_holders['natoms_vec: natoms_vec,
-                                    self.place_holders['box: data_box,
-                                    self.place_holders['default_mesh: mesh,
+                                    self.place_holders['coord']: data_coord,
+                                    self.place_holders['type']: data_atype,
+                                    self.place_holders['natoms_vec']: natoms_vec,
+                                    self.place_holders['box']: data_box,
+                                    self.place_holders['default_mesh']: mesh,
                                 })
         natoms = natoms_vec
         dd_all = np.reshape(dd_all, [-1, self.ndescrpt * natoms[0]])

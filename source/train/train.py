@@ -89,6 +89,8 @@ def train_(args) :
 def train(trainer, data, descrpt, loss_func, is_distrib=False):
     assert isinstance(trainer, AbstractTrainer)
     assert isinstance(data,    AbstractTrainer)
+    assert isinstance(descrpt, AbstractDescrpt)
+    assert isinstance(loss_func, Abstract)
     data = DeepmdDataSystem(systems, 
                             batch_size, 
                             test_size, 
