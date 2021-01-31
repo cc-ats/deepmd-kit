@@ -2,6 +2,8 @@
 import os
 import time
 import shutil
+from abc import ABC, abstractmethod 
+
 import numpy as np
 from deepmd.env import tf
 from deepmd.env import default_tf_session_config
@@ -15,6 +17,12 @@ from deepmd.DescrptSeAR import DescrptSeAR
 from deepmd.Model import Model, WFCModel, DipoleModel, PolarModel, GlobalPolarModel
 from deepmd.Loss import EnerStdLoss, EnerDipoleLoss, TensorLoss
 from deepmd.LearningRate import LearningRateExp
+
+from deepmd.LearningRate    import AbstractLearningRate
+from deepmd.DescrptLocFrame import AbstractDescrpt
+from deepmd.Fitting         import AbstractFitting
+from deepmd.Loss            import AbstractLossFunc
+
 
 from tensorflow.python.client import timeline
 from deepmd.env import op_module
@@ -40,28 +48,32 @@ def _is_subdir(path, directory):
     relative = os.path.relpath(path, directory) + os.sep
     return not relative.startswith(os.pardir + os.sep)
 
-class AbstractTrainer(object):
+class AbstractTrainer(ABC):
+    @abstractmethod
     def __init__(self):
         pass
 
-    def init_param(self):
-        pass
-
+    @abstractmethod
     def init_param_jdata(self):
         pass
 
+    @abstractmethod
     def build(self):
         pass
 
+    @abstractmethod
     def train(self):
         pass
 
+    @abstractmethod
     def get_global_step(self):
         pass
 
+    @abstractmethod
     def print_head(self):
         pass
 
+    @abstractmethod
     def test_on_the_fly(self):
         pass
 
@@ -69,17 +81,14 @@ class NNPTrainer (AbstractTrainer):
     # def __init__(self, jdata, run_opt):
     #     self.run_opt = run_opt
 
-    def __init__(self, **kwarg):
-        if kwarg:
-
-
-    def init_param(self, descrpt_obj, fitting_obj):
+    def __init__(self, descrpt_obj, fitting_obj):
         # descriptor
         assert isinstance(descrpt_obj, AbstractDescrpt)
-        
 
         # fitting net
         assert isinstance(fitting_obj, AbstractFitting)
+
+        # check for consistency
         if isinstance(fitting_obj, EnerFitting):
             pass
         elif isinstance(fitting_obj, WFCFitting):

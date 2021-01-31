@@ -9,16 +9,13 @@ from deepmd.env import default_tf_session_config
 from DescrptLocFrame import AbstractDescrpt
 
 class DescrptSeA (AbstractDescrpt):
-    def __init__ (self):
-        pass
-
-    def init_param(self, sel, rcut=6.0, rcut_smth=0.5, neuron=[10,20,40],
-                         axis_neuron=4, resnet_dt=False,  trainable=True,
-                         seed=None, type_one_side=False, exclude_types=[],
-                         set_davg_zero=False, 
-                         activation_function='tanh',
-                         precision="default"
-                         ):
+    def __init__ (self, sel, rcut=6.0, rcut_smth=0.5, neuron=[10,20,40],
+                        axis_neuron=4, resnet_dt=False,  trainable=True,
+                        seed=None, type_one_side=False, exclude_types=[],
+                        set_davg_zero=False, 
+                        activation_function='tanh',
+                        precision="default"
+                  ):
         self.sel_a            = sel
         self.rcut_r           = rcut
         self.rcut_r_smth      = rcut_smth
@@ -83,6 +80,7 @@ class DescrptSeA (AbstractDescrpt):
                                          sel_r = self.sel_r)
         self.sub_sess = tf.Session(graph = sub_graph, config=default_tf_session_config)
 
+    @classmethod
     def init_param_jdata(self, jdata):
         args = ClassArg()\
                .add('sel',      list,   must = True) \
@@ -115,16 +113,16 @@ class DescrptSeA (AbstractDescrpt):
         set_davg_zero       = class_data['set_davg_zero']
         type_one_side       = class_data['type_one_side']
 
-        self.init_param(sel, rcut=rcut_r, rcut_smth=rcut_r_smth,        
-                             neuron=filter_neuron, axis_neuron=n_axis_neuron,
-                             resnet_dt=filter_resnet_dt,  
-                             trainable=trainable,
-                             seed=seed, type_one_side=type_one_side,
-                             exclude_types=exclude_types,
-                             activation_function=activation_function,
-                             precision=precision,
-                             set_davg_zero=set_davg_zero
-                        )
+        self(sel, rcut=rcut_r, rcut_smth=rcut_r_smth,        
+                  neuron=filter_neuron, axis_neuron=n_axis_neuron,
+                  resnet_dt=filter_resnet_dt,  
+                  trainable=trainable,
+                  seed=seed, type_one_side=type_one_side,
+                  exclude_types=exclude_types,
+                  activation_function=activation_function,
+                  precision=precision,
+                  set_davg_zero=set_davg_zero
+            )
 
 
     def get_rcut (self) :
@@ -252,10 +250,8 @@ class DescrptSeA (AbstractDescrpt):
 
         return self.dout
 
-    
     def get_rot_mat(self) :
         return self.qmat
-
 
     def prod_force_virial(self, atom_ener, natoms) :
         [net_deriv] = tf.gradients (atom_ener, self.descrpt_reshape)

@@ -1,45 +1,73 @@
 import warnings
 import numpy as np
+from abc import ABC, abstractmethod 
 
 from deepmd.env import tf
 from deepmd.common import ClassArg, add_data_requirement, get_activation_func, get_precision
 from deepmd.Network import one_layer
+from deepmd.DescrptLocFrame import AbstractDescrpt
 from deepmd.DescrptLocFrame import DescrptLocFrame
 from deepmd.DescrptSeA import DescrptSeA
 
 from deepmd.RunOptions import global_tf_float_precision
 
-class EnerFitting ():
-    def __init__ (self, jdata, descrpt):
-        # model param
-        self.ntypes = descrpt.get_ntypes()
-        self.dim_descrpt = descrpt.get_dim_out()
-        args = ClassArg()\
-               .add('numb_fparam',      int,    default = 0)\
-               .add('numb_aparam',      int,    default = 0)\
-               .add('neuron',           list,   default = [120,120,120], alias = 'n_neuron')\
-               .add('resnet_dt',        bool,   default = True)\
-               .add('rcond',            float,  default = 1e-3) \
-               .add('seed',             int)               \
-               .add('atom_ener',        list,   default = [])\
-               .add("activation_function", str,    default = "tanh")\
-               .add("precision",           str, default = "default")\
-               .add("trainable",        [list, bool], default = True)
-        class_data = args.parse(jdata)
-        self.numb_fparam = class_data['numb_fparam']
-        self.numb_aparam = class_data['numb_aparam']
-        self.n_neuron = class_data['neuron']
-        self.resnet_dt = class_data['resnet_dt']
-        self.rcond = class_data['rcond']
-        self.seed = class_data['seed']
-        self.fitting_activation_fn = get_activation_func(class_data["activation_function"])
-        self.fitting_precision = get_precision(class_data['precision'])
-        self.trainable = class_data['trainable']
+class AbstractFitting(ABC):
+    @abstractmethod
+    def __init__(self):
+        pass
+
+    @abstractmethod
+    def init_param_jdata(self):
+        pass
+
+    @abstractmethod
+    def get_numb_fparam(self):
+        pass
+
+    @abstractmethod
+    def get_numb_aparam(self):
+        pass
+
+    @abstractmethod
+    def compute_output_stats(self):
+        pass
+
+    @abstractmethod
+    def compute_input_stats(self):
+        pass
+
+    @abstractmethod
+    def test_on_the_fly(self):
+        pass
+
+    @abstractmethod
+    def build(self):
+        pass
+
+class EnerFitting (AbstractFitting):
+    def __init__ (self, numb_fparam=0,  numb_aparam=0, neuron=[120,120,120],
+                        resnet_dt=True, rcond=1e-3,    seed=None,
+                        atom_ener=[], activation_function="tanh",
+                        precision="default", trainable=True):
+        self.ntypes      = None
+        self.dim_descrpt = None
+
+        self.numb_fparam = numb_fparam
+        self.numb_aparam = numb_aparam
+        self.n_neuron    = neuron
+        self.resnet_dt   = resnet_dt
+        self.rcond       = rcond
+        self.seed        = seed
+        self.trainable   = trainable
+
+        self.fitting_activation_fn = get_activation_func(activation_function)
+        self.fitting_precision     = get_precision(precision)
+        
         if type(self.trainable) is bool:
             self.trainable = [self.trainable] * (len(self.n_neuron)+1)
         assert(len(self.trainable) == len(self.n_neuron) + 1), 'length of trainable should be that of n_neuron + 1'
         self.atom_ener = []
-        for at, ae in enumerate(class_data['atom_ener']):
+        for at, ae in enumerate(atom_ener):
             if ae is not None:
                 self.atom_ener.append(tf.constant(ae, global_tf_float_precision, name = "atom_%d_ener" % at))
             else:
@@ -57,6 +85,41 @@ class EnerFitting ():
             self.aparam_avg = None
             self.aparam_std = None
             self.aparam_inv_std = None
+
+    def set_descrpt_param(self, descrpt):
+        assert isinstance(descrpt, AbstractDescrpt)
+        self.ntypes = descrpt.get_ntypes()
+        self.dim_descrpt = descrpt.get_dim_out()
+
+    @classmethod
+    def init_param_jdata(self, jdata):
+        args = ClassArg()\
+               .add('numb_fparam',      int,    default = 0)\
+               .add('numb_aparam',      int,    default = 0)\
+               .add('neuron',           list,   default = [120,120,120], alias = 'n_neuron')\
+               .add('resnet_dt',        bool,   default = True)\
+               .add('rcond',            float,  default = 1e-3) \
+               .add('seed',             int)               \
+               .add('atom_ener',        list,   default = [])\
+               .add("activation_function", str,    default = "tanh")\
+               .add("precision",           str, default = "default")\
+               .add("trainable",        [list, bool], default = True)
+        class_data = args.parse(jdata)
+        numb_fparam = class_data['numb_fparam']
+        numb_aparam = class_data['numb_aparam']
+        n_neuron = class_data['neuron']
+        resnet_dt = class_data['resnet_dt']
+        rcond = class_data['rcond']
+        seed = class_data['seed']
+        activation_function = class_data["activation_function"]
+        precision = class_data['precision']
+        trainable = class_data['trainable']
+        atom_ener = class_data['atom_ener']
+        
+        return self(numb_fparam=numb_fparam, numb_aparam=numb_aparam, neuron=n_neuron,
+                    resnet_dt=resnet_dt,     rcond=rcond,             seed=seed,
+                    atom_ener=atom_ener,     activation_function="tanh",
+                    precision=precision,     trainable=trainable)
 
     def get_numb_fparam(self) :
         return self.numb_fparam
@@ -243,7 +306,7 @@ class EnerFitting ():
         return tf.cast(tf.reshape(outs, [-1]), global_tf_float_precision)        
 
 
-class WFCFitting () :
+class WFCFitting (AbstractFitting) :
     def __init__ (self, jdata, descrpt) :
         if not isinstance(descrpt, DescrptLocFrame) :
             raise RuntimeError('WFC only supports DescrptLocFrame')
@@ -327,7 +390,7 @@ class WFCFitting () :
 
 
 
-class PolarFittingLocFrame () :
+class PolarFittingLocFrame (AbstractFitting) :
     def __init__ (self, jdata, descrpt) :
         if not isinstance(descrpt, DescrptLocFrame) :
             raise RuntimeError('PolarFittingLocFrame only supports DescrptLocFrame')
@@ -408,7 +471,7 @@ class PolarFittingLocFrame () :
         return tf.cast(tf.reshape(outs, [-1]),  global_tf_float_precision)
 
 
-class PolarFittingSeA () :
+class PolarFittingSeA (AbstractFitting) :
     def __init__ (self, jdata, descrpt) :
         if not isinstance(descrpt, DescrptSeA) :
             raise RuntimeError('PolarFittingSeA only supports DescrptSeA')
@@ -540,7 +603,7 @@ class PolarFittingSeA () :
         return tf.cast(tf.reshape(outs, [-1]), global_tf_float_precision)
 
 
-class GlobalPolarFittingSeA () :
+class GlobalPolarFittingSeA (AbstractFitting) :
     def __init__ (self, jdata, descrpt) :
         if not isinstance(descrpt, DescrptSeA) :
             raise RuntimeError('GlobalPolarFittingSeA only supports DescrptSeA')
@@ -568,7 +631,7 @@ class GlobalPolarFittingSeA () :
         return tf.reshape(outs, [-1])
 
 
-class DipoleFittingSeA () :
+class DipoleFittingSeA (AbstractFitting) :
     def __init__ (self, jdata, descrpt) :
         if not isinstance(descrpt, DescrptSeA) :
             raise RuntimeError('DipoleFittingSeA only supports DescrptSeA')

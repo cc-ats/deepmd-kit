@@ -53,10 +53,7 @@ class AbstractDescrpt(ABC):
         pass
 
 class DescrptLocFrame (AbstractDescrpt) :
-    def __init__(self):
-        pass
-
-    def init_param(self, sel_a, sel_r, axis_rule, rcut=6.0):
+    def __init__(self, sel_a, sel_r, axis_rule, rcut=6.0):
         self.sel_a     = sel_a
         self.sel_r     = sel_r
         self.axis_rule = axis_rule
@@ -101,6 +98,7 @@ class DescrptLocFrame (AbstractDescrpt) :
                                      axis_rule = self.axis_rule)
         self.sub_sess = tf.Session(graph = sub_graph, config=default_tf_session_config)
 
+    @classmethod
     def init_param_jdata(self, jdata):
         args = ClassArg()\
                .add('sel_a',    list,   must = True) \
@@ -112,7 +110,7 @@ class DescrptLocFrame (AbstractDescrpt) :
         sel_r     = class_data['sel_r']
         axis_rule = class_data['axis_rule']
         rcut_r    = class_data['rcut']
-        self.init_param(sel_a, sel_r, axis_rule, rcut=rcut_r)
+        return self(sel_a, sel_r, axis_rule, rcut=rcut_r)
 
 
     def get_rcut (self) :
