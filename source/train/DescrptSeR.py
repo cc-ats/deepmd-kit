@@ -28,14 +28,15 @@ class DescrptSeA (AbstractDescrpt):
         self.trainable            = trainable
         self.filter_activation_fn = get_activation_func(activation_function)
         self.filter_precision     = get_precision(precision)
+        self.set_davg_zero        = set_davg_zero
+        self.type_one_side        = type_one_side
 
         self.exclude_types = set()
         for tt in exclude_types:
             assert(len(tt) == 2)
             self.exclude_types.add((tt[0], tt[1]))
             self.exclude_types.add((tt[1], tt[0]))
-        self.set_davg_zero = set_davg_zero
-        self.type_one_side = type_one_side
+
         if self.type_one_side and len(exclude_types) != 0:
             raise RuntimeError('"type_one_side" is not compatible with "exclude_types"')
 

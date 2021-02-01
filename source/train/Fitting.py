@@ -49,6 +49,7 @@ class EnerFitting (AbstractFitting):
                         resnet_dt=True, rcond=1e-3,    seed=None,
                         atom_ener=[], activation_function="tanh",
                         precision="default", trainable=True):
+
         self.ntypes      = None
         self.dim_descrpt = None
 
@@ -104,22 +105,29 @@ class EnerFitting (AbstractFitting):
                .add("activation_function", str,    default = "tanh")\
                .add("precision",           str, default = "default")\
                .add("trainable",        [list, bool], default = True)
+
         class_data = args.parse(jdata)
-        numb_fparam = class_data['numb_fparam']
-        numb_aparam = class_data['numb_aparam']
-        n_neuron = class_data['neuron']
-        resnet_dt = class_data['resnet_dt']
-        rcond = class_data['rcond']
-        seed = class_data['seed']
-        activation_function = class_data["activation_function"]
-        precision = class_data['precision']
-        trainable = class_data['trainable']
-        atom_ener = class_data['atom_ener']
+        numb_fparam         = class_data['numb_fparam']
+        numb_aparam         = class_data['numb_aparam']
+        n_neuron            = class_data['neuron']
+        resnet_dt           = class_data['resnet_dt']
+        rcond               = class_data['rcond']
+        seed                = class_data['seed']
+        activation_function = class_data['activation_function']
+        precision           = class_data['precision']
+        trainable           = class_data['trainable']
+        atom_ener           = class_data['atom_ener']
         
-        return self(numb_fparam=numb_fparam, numb_aparam=numb_aparam, neuron=n_neuron,
-                    resnet_dt=resnet_dt,     rcond=rcond,             seed=seed,
-                    atom_ener=atom_ener,     activation_function="tanh",
-                    precision=precision,     trainable=trainable)
+        return self(numb_fparam=numb_fparam,
+                    numb_aparam=numb_aparam,
+                    neuron=n_neuron,
+                    resnet_dt=resnet_dt,
+                    rcond=rcond,
+                    seed=seed,
+                    atom_ener=atom_ener,
+                    activation_function=activation_function,
+                    precision=precision,
+                    trainable=trainable)
 
     def get_numb_fparam(self) :
         return self.numb_fparam
@@ -307,29 +315,59 @@ class EnerFitting (AbstractFitting):
 
 
 class WFCFitting (AbstractFitting) :
-    def __init__ (self, jdata, descrpt) :
+    def __init__ (self, wfc_numb,
+                        neuron              = [120,120,120],
+                        resnet_dt           = True,
+                        sel_type            = None,
+                        seed                = None,
+                        activation_function = "tanh",
+                        precision           = "default") :
+
+        self.n_neuron              = neuron
+        self.resnet_dt             = resnet_dt
+        self.wfc_numb              = wfc_numb
+        self.sel_type              = sel_type
+        self.seed                  = seed
+        self.fitting_activation_fn = get_activation_func(activation_function)
+        self.fitting_precision     = get_precision(precision)
+        self.useBN                 = False
+
+    def set_descrpt_param(self, descrpt) :
         if not isinstance(descrpt, DescrptLocFrame) :
             raise RuntimeError('WFC only supports DescrptLocFrame')
-        self.ntypes = descrpt.get_ntypes()
+        self.ntypes      = descrpt.get_ntypes()
         self.dim_descrpt = descrpt.get_dim_out()
-        args = ClassArg()\
-               .add('neuron',           list,   default = [120,120,120], alias = 'n_neuron')\
-               .add('resnet_dt',        bool,   default = True)\
-               .add('wfc_numb',         int,    must = True)\
-               .add('sel_type',         [list,int],   default = [ii for ii in range(self.ntypes)], alias = 'wfc_type')\
-               .add('seed',             int)\
-               .add("activation_function", str, default = "tanh")\
-               .add('precision',           str,    default = "default")
-        class_data = args.parse(jdata)
-        self.n_neuron = class_data['neuron']
-        self.resnet_dt = class_data['resnet_dt']
-        self.wfc_numb = class_data['wfc_numb']
-        self.sel_type = class_data['sel_type']
-        self.seed = class_data['seed']
-        self.fitting_activation_fn = get_activation_func(class_data["activation_function"])
-        self.fitting_precision = get_precision(class_data['precision'])
-        self.useBN = False
 
+        if self.sel_type is None:
+            self.sel_type = [ii for ii in range(self.ntypes)]
+
+    @classmethod
+    def init_param_jdata(self, jdata):
+        args = ClassArg()\
+               .add('neuron',           list,         default = [120,120,120], alias = 'n_neuron')\
+               .add('resnet_dt',        bool,         default = True)\
+               .add('wfc_numb',         int,          must = True)\
+               .add('sel_type',         [list,int],   default = None, alias = 'wfc_type')\
+               .add('seed',             int)\
+               .add("activation_function", str,       default = "tanh")\
+               .add('precision',           str,       default = "default")
+        class_data = args.parse(jdata)
+
+        n_neuron            = class_data['neuron']
+        resnet_dt           = class_data['resnet_dt']
+        wfc_numb            = class_data['wfc_numb']
+        sel_type            = class_data['sel_type']
+        seed                = class_data['seed']
+        activation_function = class_data["activation_function"]
+        precision           = class_data['precision']
+
+        return self(wfc_numb,
+                    neuron=n_neuron,
+                    resnet_dt=resnet_dt,
+                    sel_type=sel_type,
+                    seed=seed,
+                    activation_function=activation_function,
+                    precision=precision)
 
     def get_sel_type(self):
         return self.sel_type
@@ -388,14 +426,34 @@ class WFCFitting (AbstractFitting) :
 
         return tf.cast(tf.reshape(outs, [-1]),  global_tf_float_precision)
 
-
-
 class PolarFittingLocFrame (AbstractFitting) :
-    def __init__ (self, jdata, descrpt) :
+    def __init__ (self, neuron=[120, 120, 120],
+                        resnet_dt=True,
+                        sel_type=None,
+                        seed=None,
+                        activation_function="tanh",
+                        precision="default") :
+
+        self.n_neuron              = neuron
+        self.resnet_dt             = resnet_dt
+        self.sel_type              = sel_type
+        self.seed                  = seed
+        self.fitting_activation_fn = get_activation_func(activation_function)
+        self.fitting_precision     = get_precision(precision)
+        self.useBN = False
+
+    def set_descrpt_param(self, descrpt) :
         if not isinstance(descrpt, DescrptLocFrame) :
             raise RuntimeError('PolarFittingLocFrame only supports DescrptLocFrame')
-        self.ntypes = descrpt.get_ntypes()
+        self.ntypes      = descrpt.get_ntypes()
         self.dim_descrpt = descrpt.get_dim_out()
+
+        if self.sel_type is None:
+            self.sel_type = [ii for ii in range(self.ntypes)]
+
+    @classmethod
+    def init_param_jdata(self, jdata) :
+
         args = ClassArg()\
                .add('neuron',           list, default = [120,120,120], alias = 'n_neuron')\
                .add('resnet_dt',        bool, default = True)\
@@ -404,13 +462,20 @@ class PolarFittingLocFrame (AbstractFitting) :
                .add("activation_function", str, default = "tanh")\
                .add('precision',           str,    default = "default")    
         class_data = args.parse(jdata)
-        self.n_neuron = class_data['neuron']
-        self.resnet_dt = class_data['resnet_dt']
-        self.sel_type = class_data['sel_type']
-        self.seed = class_data['seed']
-        self.fitting_activation_fn = get_activation_func(class_data["activation_function"])
-        self.fitting_precision = get_precision(class_data['precision'])
-        self.useBN = False
+
+        n_neuron            = class_data['neuron']
+        resnet_dt           = class_data['resnet_dt']
+        sel_type            = class_data['sel_type']
+        seed                = class_data['seed']
+        activation_function = class_data["activation_function"]
+        precision           = class_data['precision']
+
+        return self(neuron=n_neuron,
+                    resnet_dt=resnet_dt,
+                    sel_type=sel_type,
+                    seed=seed,
+                    activation_function=activation_function,
+                    precision=precision)
 
     def get_sel_type(self):
         return self.sel_type
@@ -470,7 +535,7 @@ class PolarFittingLocFrame (AbstractFitting) :
 
         return tf.cast(tf.reshape(outs, [-1]),  global_tf_float_precision)
 
-
+#TODO!
 class PolarFittingSeA (AbstractFitting) :
     def __init__ (self, jdata, descrpt) :
         if not isinstance(descrpt, DescrptSeA) :
@@ -602,7 +667,7 @@ class PolarFittingSeA (AbstractFitting) :
 
         return tf.cast(tf.reshape(outs, [-1]), global_tf_float_precision)
 
-
+#TODO!
 class GlobalPolarFittingSeA (AbstractFitting) :
     def __init__ (self, jdata, descrpt) :
         if not isinstance(descrpt, DescrptSeA) :
