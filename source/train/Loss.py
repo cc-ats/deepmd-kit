@@ -25,10 +25,7 @@ class AbstractLossFunc(object):
         pass
 
 class EnerStdLoss (AbstractLossFunc) :
-    def __init__ (self) :
-        pass
-
-    def init_param(self, starter_learning_rate, 
+    def __init__ (self, starter_learning_rate, 
                          start_pref_e=0.02, limit_pref_e=1.00, 
                          start_pref_f=1000, limit_pref_f=1.0,
                          start_pref_v=0.0,  limit_pref_v=0.0,
@@ -59,7 +56,8 @@ class EnerStdLoss (AbstractLossFunc) :
         add_data_requirement('atom_ener', 1, atomic=True, must=False, high_prec=False)
         add_data_requirement('atom_pref', 1, atomic=True, must=False, high_prec=False, repeat=3)
 
-    def init_param_jdata(self, jdata, **kwarg):
+    @classmethod
+    def init_param_jdata(cls, jdata, **kwarg):
         starter_learning_rate = kwarg['starter_learning_rate']
         args = ClassArg()\
             .add('start_pref_e',        float,  default = 0.02)\
@@ -86,8 +84,7 @@ class EnerStdLoss (AbstractLossFunc) :
         limit_pref_pf = class_data['limit_pref_pf']
         relative_f = class_data['relative_f']
 
-        self.init_param(
-            starter_learning_rate, start_pref_e=start_pref_e, limit_pref_e=limit_pref_e,
+        cls(starter_learning_rate, start_pref_e=start_pref_e, limit_pref_e=limit_pref_e,
             start_pref_f=start_pref_f, limit_pref_f=limit_pref_f,
             start_pref_v=start_pref_v, limit_pref_v=limit_pref_v,
             start_pref_ae=start_pref_ae, limit_pref_ae=limit_pref_ae,
@@ -226,10 +223,7 @@ class EnerStdLoss (AbstractLossFunc) :
 
 
 class EnerDipoleLoss (AbstractLossFunc) :
-    def __init__ (self) :
-        pass
-
-    def init_param (self, starter_learning_rate, start_pref_e=0.1, limit_pref_e=1.00, start_pref_ed=1.00, limit_pref_ed=1.00) :
+    def __init__ (self, starter_learning_rate, start_pref_e=0.1, limit_pref_e=1.00, start_pref_ed=1.00, limit_pref_ed=1.00) :
         self.starter_learning_rate = starter_learning_rate
         self.start_pref_e          = start_pref_e
         self.limit_pref_e          = limit_pref_e
@@ -239,7 +233,8 @@ class EnerDipoleLoss (AbstractLossFunc) :
         add_data_requirement('energy', 1, atomic=False, must=True, high_prec=True)
         add_data_requirement('energy_dipole', 3, atomic=False, must=True, high_prec=False)
 
-    def init_param_jdata (self, jdata, **kwarg) :
+    @classmethod
+    def init_param_jdata (cls, jdata, **kwarg) :
         starter_learning_rate = kwarg['starter_learning_rate']
         args = ClassArg()\
             .add('start_pref_e',        float,  must = True, default = 0.1) \
@@ -253,7 +248,7 @@ class EnerDipoleLoss (AbstractLossFunc) :
         start_pref_ed = class_data['start_pref_ed']
         limit_pref_ed = class_data['limit_pref_ed']
 
-        self.init_param(starter_learning_rate=starter_learning_rate,
+        cls(starter_learning_rate=starter_learning_rate,
             start_pref_e=start_pref_e, limit_pref_e=limit_pref_e,
             start_pref_ed=start_pref_ed, limit_pref_ed=limit_pref_ed
             )
@@ -337,10 +332,7 @@ class EnerDipoleLoss (AbstractLossFunc) :
 
 
 class TensorLoss (AbstractLossFunc) :
-    def __init__ (self) :
-        pass
-
-    def init_param (self, model, tensor_name, tensor_size, label_name, atomic=True, scale=1.0) :
+    def __init__ (self, model, tensor_name, tensor_size, label_name, atomic=True, scale=1.0) :
         try:
             model    = model
             type_sel = model.get_sel_type()
@@ -361,7 +353,8 @@ class TensorLoss (AbstractLossFunc) :
                              high_prec=False, 
                              type_sel = type_sel)
 
-    def init_param_jdata(self, jdata, **kwarg) :
+    @classmethod
+    def init_param_jdata(cls, jdata, **kwarg) :
         try:
             model = kwarg['model']
             type_sel = model.get_sel_type()
@@ -377,7 +370,7 @@ class TensorLoss (AbstractLossFunc) :
         else:
             scale = 1.0
         
-        self.init_param(model, tensor_name, tensor_size, label_name, atomic=atomic, scale=scale)
+        cls(model, tensor_name, tensor_size, label_name, atomic=atomic, scale=scale)
 
     def build (self, 
                learning_rate,
@@ -419,5 +412,3 @@ class TensorLoss (AbstractLossFunc) :
         print_str += prop_fmt % (np.sqrt(error_test), np.sqrt(error_train))
 
         return print_str
-
-
