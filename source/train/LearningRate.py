@@ -21,6 +21,7 @@ class AbstractLearningRate(object):
     def value(self):
         pass
 
+#TODO!
 class LearningRateExp (AbstractLearningRate) :
     def __init__ (self) :
         pass
