@@ -22,6 +22,7 @@ from deepmd.LearningRate    import AbstractLearningRate
 from deepmd.DescrptLocFrame import AbstractDescrpt
 from deepmd.Fitting         import AbstractFitting
 from deepmd.Loss            import AbstractLossFunc
+from deepmd.Model           import AbstractModel
 
 from tensorflow.python.client import timeline
 from deepmd.env import op_module
@@ -90,7 +91,7 @@ class NNPTrainer (AbstractTrainer):
                        fitting_obj         = None,
                        model_obj           = None,
                        lr_obj              = None,
-                       loss_func_obj       = None,
+                       loss_obj            = None,
                        numb_test           = 1,
                        disp_file           = 'lcurve.out',
                        disp_freq           = 100,
@@ -104,11 +105,12 @@ class NNPTrainer (AbstractTrainer):
                        auto_prob_style     = "prob_sys_size"):
         self.run_opt = run_opt
 
-        has_descrpt = descrpt_obj is not None
-        has_fitting = fitting_obj is not None
-        has_model   = model_obj   is not None
+        has_descrpt = descrpt_obj   is not None
+        has_fitting = fitting_obj   is not None
+        has_model   = model_obj     is not None
+        has_loss    = loss_obj      is not None
 
-        assert (has_descrpt and has_fitting) or has_model
+        assert (has_descrpt and has_fitting) or (has_model and has_loss)
 
         if has_descrpt and has_fitting: 
             # descriptor
@@ -151,8 +153,54 @@ class NNPTrainer (AbstractTrainer):
             else :
                 raise RuntimeError('get unknown fitting type when building model')
         # TODO!: ----------------------------------------------------------------------
-        elif has_model:
+
+        # TODO!: ----------------------------------------------------------------------
+            try :
+                loss_param = jdata['loss']
+                loss_type = loss_param.get('type', 'ener')
+            except:
+                loss_param = None
+                loss_type = 'ener'
+
+            if isinstance(fitting_obj, EnerFitting):
+                if loss_type == 'ener':
+                    self.loss = EnerStdLoss(loss_param, starter_learning_rate = self.lr.start_lr())
+                elif loss_type == 'ener_dipole':
+                    self.loss = EnerDipoleLoss(loss_param, starter_learning_rate = self.lr.start_lr())
+                else:
+                    raise RuntimeError('unknow loss type')
+            elif fitting_type == 'wfc':
+                self.loss = TensorLoss(loss_param, 
+                                    model = self.model, 
+                                    tensor_name = 'wfc',
+                                    tensor_size = self.model.get_out_size(),
+                                    label_name = 'wfc')
+            elif fitting_type == 'dipole':
+                self.loss = TensorLoss(loss_param, 
+                                    model = self.model, 
+                                    tensor_name = 'dipole',
+                                    tensor_size = 3,
+                                    label_name = 'dipole')
+            elif fitting_type == 'polar':
+                self.loss = TensorLoss(loss_param, 
+                                    model = self.model, 
+                                    tensor_name = 'polar',
+                                    tensor_size = 9,
+                                    label_name = 'polarizability')
+            elif fitting_type == 'global_polar':
+                self.loss = TensorLoss(loss_param, 
+                                    model = self.model, 
+                                    tensor_name = 'global_polar',
+                                    tensor_size = 9,
+                                    atomic = False,
+                                    label_name = 'polarizability')
+            else :
+                raise RuntimeError('get unknown fitting type when building loss function')
+        # TODO!: ----------------------------------------------------------------------
+
+        elif has_model and has_loss:
             self.model  = model_obj
+            self.loss   = loss_obj
         assert isinstance(self.model, AbstractModel)
         
         # TODO!: ----------------------------------------------------------------------
@@ -163,51 +211,6 @@ class NNPTrainer (AbstractTrainer):
             self.lr  = LearningRateExp(lr_param)
         assert isinstance(self.lr, AbstractLearningRate)
         # TODO!: ----------------------------------------------------------------------
-
-        # TODO!: ----------------------------------------------------------------------
-        # loss
-        # infer loss type by fitting_type
-        try :
-            loss_param = jdata['loss']
-            loss_type = loss_param.get('type', 'ener')
-        except:
-            loss_param = None
-            loss_type = 'ener'
-
-        if fitting_type == 'ener':
-            if loss_type == 'ener':
-                self.loss = EnerStdLoss(loss_param, starter_learning_rate = self.lr.start_lr())
-            elif loss_type == 'ener_dipole':
-                self.loss = EnerDipoleLoss(loss_param, starter_learning_rate = self.lr.start_lr())
-            else:
-                raise RuntimeError('unknow loss type')
-        elif fitting_type == 'wfc':
-            self.loss = TensorLoss(loss_param, 
-                                   model = self.model, 
-                                   tensor_name = 'wfc',
-                                   tensor_size = self.model.get_out_size(),
-                                   label_name = 'wfc')
-        elif fitting_type == 'dipole':
-            self.loss = TensorLoss(loss_param, 
-                                   model = self.model, 
-                                   tensor_name = 'dipole',
-                                   tensor_size = 3,
-                                   label_name = 'dipole')
-        elif fitting_type == 'polar':
-            self.loss = TensorLoss(loss_param, 
-                                   model = self.model, 
-                                   tensor_name = 'polar',
-                                   tensor_size = 9,
-                                   label_name = 'polarizability')
-        elif fitting_type == 'global_polar':
-            self.loss = TensorLoss(loss_param, 
-                                   model = self.model, 
-                                   tensor_name = 'global_polar',
-                                   tensor_size = 9,
-                                   atomic = False,
-                                   label_name = 'polarizability')
-        else :
-            raise RuntimeError('get unknown fitting type when building loss function')
 
         # training
         training_param = j_must_have(jdata, 'training')
