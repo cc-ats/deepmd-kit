@@ -93,7 +93,7 @@ class EnerFitting (AbstractFitting):
         self.dim_descrpt = descrpt.get_dim_out()
 
     @classmethod
-    def init_param_jdata(self, jdata):
+    def init_param_jdata(cls, jdata):
         args = ClassArg()\
                .add('numb_fparam',      int,    default = 0)\
                .add('numb_aparam',      int,    default = 0)\
@@ -118,7 +118,7 @@ class EnerFitting (AbstractFitting):
         trainable           = class_data['trainable']
         atom_ener           = class_data['atom_ener']
         
-        return self(numb_fparam=numb_fparam,
+        return cls(numb_fparam=numb_fparam,
                     numb_aparam=numb_aparam,
                     neuron=n_neuron,
                     resnet_dt=resnet_dt,
@@ -342,7 +342,7 @@ class WFCFitting (AbstractFitting) :
             self.sel_type = [ii for ii in range(self.ntypes)]
 
     @classmethod
-    def init_param_jdata(self, jdata):
+    def init_param_jdata(cls, jdata):
         args = ClassArg()\
                .add('neuron',           list,         default = [120,120,120], alias = 'n_neuron')\
                .add('resnet_dt',        bool,         default = True)\
@@ -361,7 +361,7 @@ class WFCFitting (AbstractFitting) :
         activation_function = class_data["activation_function"]
         precision           = class_data['precision']
 
-        return self(wfc_numb,
+        return cls(wfc_numb,
                     neuron=n_neuron,
                     resnet_dt=resnet_dt,
                     sel_type=sel_type,
@@ -452,7 +452,7 @@ class PolarFittingLocFrame (AbstractFitting) :
             self.sel_type = [ii for ii in range(self.ntypes)]
 
     @classmethod
-    def init_param_jdata(self, jdata) :
+    def init_param_jdata(cls, jdata) :
 
         args = ClassArg()\
                .add('neuron',           list, default = [120,120,120], alias = 'n_neuron')\
@@ -470,7 +470,7 @@ class PolarFittingLocFrame (AbstractFitting) :
         activation_function = class_data["activation_function"]
         precision           = class_data['precision']
 
-        return self(neuron=n_neuron,
+        return cls(neuron=n_neuron,
                     resnet_dt=resnet_dt,
                     sel_type=sel_type,
                     seed=seed,

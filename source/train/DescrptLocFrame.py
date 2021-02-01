@@ -99,7 +99,7 @@ class DescrptLocFrame (AbstractDescrpt) :
         self.sub_sess = tf.Session(graph = sub_graph, config=default_tf_session_config)
 
     @classmethod
-    def init_param_jdata(self, jdata):
+    def init_param_jdata(cls, jdata):
         args = ClassArg()\
                .add('sel_a',    list,   must = True) \
                .add('sel_r',    list,   must = True) \
@@ -110,7 +110,7 @@ class DescrptLocFrame (AbstractDescrpt) :
         sel_r     = class_data['sel_r']
         axis_rule = class_data['axis_rule']
         rcut_r    = class_data['rcut']
-        return self(sel_a, sel_r, axis_rule, rcut=rcut_r)
+        return cls(sel_a, sel_r, axis_rule, rcut=rcut_r)
 
 
     def get_rcut (self) :

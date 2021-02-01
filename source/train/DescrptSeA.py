@@ -81,7 +81,7 @@ class DescrptSeA (AbstractDescrpt):
         self.sub_sess = tf.Session(graph = sub_graph, config=default_tf_session_config)
 
     @classmethod
-    def init_param_jdata(self, jdata):
+    def init_param_jdata(cls, jdata):
         args = ClassArg()\
                .add('sel',      list,   must = True) \
                .add('rcut',     float,  default = 6.0) \
@@ -113,7 +113,7 @@ class DescrptSeA (AbstractDescrpt):
         set_davg_zero       = class_data['set_davg_zero']
         type_one_side       = class_data['type_one_side']
 
-        self(sel, rcut=rcut_r, rcut_smth=rcut_r_smth,        
+        return cls(sel, rcut=rcut_r, rcut_smth=rcut_r_smth,        
                   neuron=filter_neuron, axis_neuron=n_axis_neuron,
                   resnet_dt=filter_resnet_dt,  
                   trainable=trainable,
