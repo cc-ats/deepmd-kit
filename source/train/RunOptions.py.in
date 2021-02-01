@@ -97,7 +97,8 @@ def distributed_task_config (MPI,
 
 class RunOptions (object) :    
     def __init__ (self, 
-                  args, 
+                  init_model  = None,
+                  restart     = None,
                   try_distrib = False):        
         # distributed tasks
         if try_distrib :
@@ -109,19 +110,18 @@ class RunOptions (object) :
 
         # model init options
         # default set
-        self.restart = None
+        self.restart    = None
         self.init_model = None
-        self.init_mode = "init_from_scratch"
-        # TODO!
-        if args is not None :
-            if (args.init_model is not None) and (args.restart is not None) :
-                raise RuntimeError ("--init-model and --restart should not be set at the same time")
-            if args.init_model is not None :
-                self.init_model = os.path.abspath(args.init_model)
-                self.init_mode = "init_from_model"
-            if args.restart is not None: 
-                self.restart = os.path.abspath(args.restart)
-                self.init_mode = "restart"
+        self.init_mode  = "init_from_scratch"
+        
+        if (init_model is not None) and (restart is not None) :
+            raise RuntimeError ("--init-model and --restart should not be set at the same time")
+        if init_model is not None :
+            self.init_model = os.path.abspath(init_model)
+            self.init_mode  = "init_from_model"
+        if restart is not None: 
+            self.restart    = os.path.abspath(restart)
+            self.init_mode  = "restart"
 
     def message (self, msg) :
         if self.verbose :

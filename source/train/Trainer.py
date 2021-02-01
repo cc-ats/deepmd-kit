@@ -85,7 +85,10 @@ class NNPTrainer (AbstractTrainer):
 # from deepmd.LearningRate    import AbstractLearningRate
 # from deepmd.Loss            import AbstractLossFunc
 
-    def __init__(self, descrpt_obj, fitting_obj, lr_obj, loss_func_obj, run_opt,
+    def __init__(self, descrpt_obj, fitting_obj, run_opt,
+                       model_obj           = None,
+                       lr_obj              = None,
+                       loss_func_obj       = None,
                        numb_test           = 1,
                        disp_file           = 'lcurve.out',
                        disp_freq           = 100,
@@ -104,78 +107,54 @@ class NNPTrainer (AbstractTrainer):
         # fitting net
         assert isinstance(fitting_obj, AbstractFitting)
 
-        # check for consistency
+        # check for consistency, more child classes could be designed here
         if isinstance(fitting_obj, EnerFitting):
             pass
         elif isinstance(fitting_obj, WFCFitting):
             pass
-        elif isinstance(fitting_obj, DipoleFitting):
-            assert isinstance(descrpt_obj, AbstractDescrpt)    
-        elif isinstance(fitting_obj, PolarFitting):
-            assert isinstance(descrpt_obj, ) or isinstance(descrpt_obj, )
-        elif isinstance(fitting_obj, GlobalPolarFitting):
-            assert isinstance(descrpt_obj, )
+        elif isinstance(fitting_obj, DipoleFittingSeA):
+            assert isinstance(descrpt_obj, DescrptSeA)    
+        elif isinstance(fitting_obj, PolarFittingLocFrame):
+            assert isinstance(descrpt_obj, DescrptLocFrame)    
+        elif isinstance(fitting_obj, PolarFittingSeA):
+            assert isinstance(descrpt_obj, DescrptSeA)
+        elif isinstance(fitting_obj, GlobalPolarFittingSeA):
+            assert isinstance(descrpt_obj, DescrptSeA)
 
         self.descrpt = descrpt_obj
         self.fitting = fitting_obj
-        self.fitting.set_descrpt_param(self.descrpt_obj)
-
-
-        try: 
-            fitting_type = fitting_param['type']
-        except:
-            fitting_type = 'ener'
-        if fitting_type == 'ener':
-            self.fitting = EnerFitting(fitting_param, self.descrpt)
-        elif fitting_type == 'wfc':            
-            self.fitting = WFCFitting(fitting_param, self.descrpt)
-        elif fitting_type == 'dipole':
-            if descrpt_type == 'se_a':
-                self.fitting = DipoleFittingSeA(fitting_param, self.descrpt)
-            else :
-                raise RuntimeError('fitting dipole only supports descrptors: se_a')
-        elif fitting_type == 'polar':
-            if descrpt_type == 'loc_frame':
-                self.fitting = PolarFittingLocFrame(fitting_param, self.descrpt)
-            elif descrpt_type == 'se_a':
-                self.fitting = PolarFittingSeA(fitting_param, self.descrpt)
-            else :
-                raise RuntimeError('fitting polar only supports descrptors: loc_frame and se_a')
-        elif fitting_type == 'global_polar':
-            if descrpt_type == 'se_a':
-                self.fitting = GlobalPolarFittingSeA(fitting_param, self.descrpt)
-            else :
-                raise RuntimeError('fitting global_polar only supports descrptors: loc_frame and se_a')
-        else :
-            raise RuntimeError('unknow fitting type ' + fitting_type)
+        self.fitting.set_descrpt_param(self.descrpt)
         
-        # TODO!
+        # TODO!: ----------------------------------------------------------------------
+        # TODO!: more child classes could be designed here
         # init model
         # infer model type by fitting_type
-        if fitting_type == Model.model_type:
-            self.model = Model(model_param, self.descrpt, self.fitting)
-        elif fitting_type == 'wfc':
-            self.model = WFCModel(model_param, self.descrpt, self.fitting)
-        elif fitting_type == 'dipole':
-            self.model = DipoleModel(model_param, self.descrpt, self.fitting)
-        elif fitting_type == 'polar':
-            self.model = PolarModel(model_param, self.descrpt, self.fitting)
-        elif fitting_type == 'global_polar':
-            self.model = GlobalPolarModel(model_param, self.descrpt, self.fitting)
-        else :
-            raise RuntimeError('get unknown fitting type when building model')
+        self.model  = model_obj
+        if model_obj is None:
+            model_param = None # TODO!
+            if isinstance(fitting_obj, EnerFitting):
+                self.model = Model(model_param, self.descrpt, self.fitting)
+            elif isinstance(fitting_obj, WFCFitting):
+                self.model = WFCModel(model_param, self.descrpt, self.fitting)
+            elif isinstance(fitting_obj, DipoleFittingSeA):
+                self.model = DipoleModel(model_param, self.descrpt, self.fitting)
+            elif isinstance(fitting_obj, PolarFittingSeA) or isinstance(fitting_obj, PolarFittingLocFrame):
+                self.model = PolarModel(model_param, self.descrpt, self.fitting)
+            elif isinstance(fitting_obj, GlobalPolarFittingSeA):
+                self.model = GlobalPolarModel(model_param, self.descrpt, self.fitting)
+            else :
+                raise RuntimeError('get unknown fitting type when building model')
+        assert isinstance(self.model, AbstractModel)
+        # TODO!: ----------------------------------------------------------------------
         
-        # TODO!
+        # TODO!: ----------------------------------------------------------------------
         # learning rate
-        lr_param = j_must_have(jdata, 'learning_rate')
-        try: 
-            lr_type = lr_param['type']
-        except:
-            lr_type = 'exp'
-        if lr_type == 'exp':
-            self.lr = LearningRateExp(lr_param)
-        else :
-            raise RuntimeError('unknown learning_rate type ' + lr_type)        
+        self.lr  = lr_obj
+        if lr_obj is None:
+            lr_param = None
+            self.lr  = LearningRateExp(lr_param)
+        assert isinstance(self.lr, AbstractLearningRate)
+        # TODO!: ----------------------------------------------------------------------
 
         # loss
         # infer loss type by fitting_type
