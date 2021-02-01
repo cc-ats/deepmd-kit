@@ -112,6 +112,7 @@ class RunOptions (object) :
         self.restart = None
         self.init_model = None
         self.init_mode = "init_from_scratch"
+        # TODO!
         if args is not None :
             if (args.init_model is not None) and (args.restart is not None) :
                 raise RuntimeError ("--init-model and --restart should not be set at the same time")

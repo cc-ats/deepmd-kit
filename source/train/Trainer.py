@@ -23,7 +23,6 @@ from deepmd.DescrptLocFrame import AbstractDescrpt
 from deepmd.Fitting         import AbstractFitting
 from deepmd.Loss            import AbstractLossFunc
 
-
 from tensorflow.python.client import timeline
 from deepmd.env import op_module
 
@@ -81,7 +80,24 @@ class NNPTrainer (AbstractTrainer):
     # def __init__(self, jdata, run_opt):
     #     self.run_opt = run_opt
 
-    def __init__(self, descrpt_obj, fitting_obj):
+# from deepmd.DescrptLocFrame import AbstractDescrpt
+# from deepmd.Fitting         import AbstractFitting
+# from deepmd.LearningRate    import AbstractLearningRate
+# from deepmd.Loss            import AbstractLossFunc
+
+    def __init__(self, descrpt_obj, fitting_obj, lr_obj, loss_func_obj, run_opt,
+                       numb_test           = 1,
+                       disp_file           = 'lcurve.out',
+                       disp_freq           = 100,
+                       save_freq           = 1000,
+                       save_ckpt           = 'model.ckpt',
+                       display_in_training = True,
+                       timing_in_training  = True,
+                       profiling           = False,
+                       profiling_filestr   = 'timeline.json',
+                       sys_probs           = None,
+                       auto_prob_style     = "prob_sys_size"):
+        self.run_opt = run_opt
         # descriptor
         assert isinstance(descrpt_obj, AbstractDescrpt)
 
@@ -100,9 +116,9 @@ class NNPTrainer (AbstractTrainer):
         elif isinstance(fitting_obj, GlobalPolarFitting):
             assert isinstance(descrpt_obj, )
 
-
         self.descrpt = descrpt_obj
         self.fitting = fitting_obj
+        self.fitting.set_descrpt_param(self.descrpt_obj)
 
 
         try: 
@@ -132,7 +148,8 @@ class NNPTrainer (AbstractTrainer):
                 raise RuntimeError('fitting global_polar only supports descrptors: loc_frame and se_a')
         else :
             raise RuntimeError('unknow fitting type ' + fitting_type)
-
+        
+        # TODO!
         # init model
         # infer model type by fitting_type
         if fitting_type == Model.model_type:
@@ -147,7 +164,8 @@ class NNPTrainer (AbstractTrainer):
             self.model = GlobalPolarModel(model_param, self.descrpt, self.fitting)
         else :
             raise RuntimeError('get unknown fitting type when building model')
-
+        
+        # TODO!
         # learning rate
         lr_param = j_must_have(jdata, 'learning_rate')
         try: 
@@ -238,9 +256,9 @@ class NNPTrainer (AbstractTrainer):
         else :
             self.numb_fparam = 0
 
-    def _init_param(self, jdata):
+    def init_param_jdata(self, jdata):
         # model config        
-        model_param = j_must_have(jdata, 'model')
+        model_param   = j_must_have(jdata, 'model')
         descrpt_param = j_must_have(model_param, 'descriptor')
         fitting_param = j_must_have(model_param, 'fitting_net')
 
