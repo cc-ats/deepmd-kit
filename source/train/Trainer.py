@@ -131,23 +131,23 @@ class NNPTrainer (AbstractTrainer):
             elif isinstance(fitting_obj, GlobalPolarFittingSeA):
                 assert isinstance(descrpt_obj, DescrptSeA)
 
-            self.descrpt = descrpt_obj
-            self.fitting = fitting_obj
-            self.fitting.set_descrpt_param(self.descrpt)
+            descrpt = descrpt_obj
+            fitting = fitting_obj
+            fitting.set_descrpt_param(descrpt)
 
         # TODO!: ----------------------------------------------------------------------
         # TODO!: more child classes could be designed here
             model_param = None # TODO!
             if isinstance(fitting_obj, EnerFitting):
-                self.model = Model(model_param, self.descrpt, self.fitting)
+                self.model = Model(model_param, descrpt, fitting)
             elif isinstance(fitting_obj, WFCFitting):
-                self.model = WFCModel(model_param, self.descrpt, self.fitting)
+                self.model = WFCModel(model_param, descrpt, fitting)
             elif isinstance(fitting_obj, DipoleFittingSeA):
-                self.model = DipoleModel(model_param, self.descrpt, self.fitting)
+                self.model = DipoleModel(model_param, descrpt, fitting)
             elif isinstance(fitting_obj, PolarFittingSeA) or isinstance(fitting_obj, PolarFittingLocFrame):
-                self.model = PolarModel(model_param, self.descrpt, self.fitting)
+                self.model = PolarModel(model_param, descrpt, fitting)
             elif isinstance(fitting_obj, GlobalPolarFittingSeA):
-                self.model = GlobalPolarModel(model_param, self.descrpt, self.fitting)
+                self.model = GlobalPolarModel(model_param, descrpt, fitting)
             else :
                 raise RuntimeError('get unknown fitting type when building model')
         # TODO!: ----------------------------------------------------------------------
@@ -164,6 +164,7 @@ class NNPTrainer (AbstractTrainer):
         assert isinstance(self.lr, AbstractLearningRate)
         # TODO!: ----------------------------------------------------------------------
 
+        # TODO!: ----------------------------------------------------------------------
         # loss
         # infer loss type by fitting_type
         try :
@@ -210,6 +211,7 @@ class NNPTrainer (AbstractTrainer):
 
         # training
         training_param = j_must_have(jdata, 'training')
+        # TODO!: ----------------------------------------------------------------------
 
         # ! first .add() altered by Marián Rynik
         tr_args = ClassArg()\
@@ -238,8 +240,8 @@ class NNPTrainer (AbstractTrainer):
         self.sys_probs = tr_data['sys_probs']        
         self.auto_prob_style = tr_data['auto_prob_style']        
         self.useBN = False
-        if fitting_type == 'ener' and  self.fitting.get_numb_fparam() > 0 :
-            self.numb_fparam = self.fitting.get_numb_fparam()
+        if fitting_type == 'ener' and  fitting.get_numb_fparam() > 0 :
+            self.numb_fparam = fitting.get_numb_fparam()
         else :
             self.numb_fparam = 0
 
@@ -252,13 +254,13 @@ class NNPTrainer (AbstractTrainer):
         # descriptor
         descrpt_type = j_must_have(descrpt_param, 'type')
         if descrpt_type == 'loc_frame':
-            self.descrpt = DescrptLocFrame(descrpt_param)
+            descrpt = DescrptLocFrame(descrpt_param)
         elif descrpt_type == 'se_a' :
-            self.descrpt = DescrptSeA(descrpt_param)
+            descrpt = DescrptSeA(descrpt_param)
         elif descrpt_type == 'se_r' :
-            self.descrpt = DescrptSeR(descrpt_param)
+            descrpt = DescrptSeR(descrpt_param)
         elif descrpt_type == 'se_ar' :
-            self.descrpt = DescrptSeAR(descrpt_param)
+            descrpt = DescrptSeAR(descrpt_param)
         else :
             raise RuntimeError('unknow model type ' + descrpt_type)
 
@@ -268,24 +270,24 @@ class NNPTrainer (AbstractTrainer):
         except:
             fitting_type = 'ener'
         if fitting_type == 'ener':
-            self.fitting = EnerFitting(fitting_param, self.descrpt)
+            fitting = EnerFitting(fitting_param, descrpt)
         elif fitting_type == 'wfc':            
-            self.fitting = WFCFitting(fitting_param, self.descrpt)
+            fitting = WFCFitting(fitting_param, descrpt)
         elif fitting_type == 'dipole':
             if descrpt_type == 'se_a':
-                self.fitting = DipoleFittingSeA(fitting_param, self.descrpt)
+                fitting = DipoleFittingSeA(fitting_param, descrpt)
             else :
                 raise RuntimeError('fitting dipole only supports descrptors: se_a')
         elif fitting_type == 'polar':
             if descrpt_type == 'loc_frame':
-                self.fitting = PolarFittingLocFrame(fitting_param, self.descrpt)
+                fitting = PolarFittingLocFrame(fitting_param, descrpt)
             elif descrpt_type == 'se_a':
-                self.fitting = PolarFittingSeA(fitting_param, self.descrpt)
+                fitting = PolarFittingSeA(fitting_param, descrpt)
             else :
                 raise RuntimeError('fitting polar only supports descrptors: loc_frame and se_a')
         elif fitting_type == 'global_polar':
             if descrpt_type == 'se_a':
-                self.fitting = GlobalPolarFittingSeA(fitting_param, self.descrpt)
+                fitting = GlobalPolarFittingSeA(fitting_param, descrpt)
             else :
                 raise RuntimeError('fitting global_polar only supports descrptors: loc_frame and se_a')
         else :
@@ -294,15 +296,15 @@ class NNPTrainer (AbstractTrainer):
         # init model
         # infer model type by fitting_type
         if fitting_type == Model.model_type:
-            self.model = Model(model_param, self.descrpt, self.fitting)
+            self.model = Model(model_param, descrpt, fitting)
         elif fitting_type == 'wfc':
-            self.model = WFCModel(model_param, self.descrpt, self.fitting)
+            self.model = WFCModel(model_param, descrpt, fitting)
         elif fitting_type == 'dipole':
-            self.model = DipoleModel(model_param, self.descrpt, self.fitting)
+            self.model = DipoleModel(model_param, descrpt, fitting)
         elif fitting_type == 'polar':
-            self.model = PolarModel(model_param, self.descrpt, self.fitting)
+            self.model = PolarModel(model_param, descrpt, fitting)
         elif fitting_type == 'global_polar':
-            self.model = GlobalPolarModel(model_param, self.descrpt, self.fitting)
+            self.model = GlobalPolarModel(model_param, descrpt, fitting)
         else :
             raise RuntimeError('get unknown fitting type when building model')
 
@@ -391,8 +393,8 @@ class NNPTrainer (AbstractTrainer):
         self.sys_probs = tr_data['sys_probs']        
         self.auto_prob_style = tr_data['auto_prob_style']        
         self.useBN = False
-        if fitting_type == 'ener' and  self.fitting.get_numb_fparam() > 0 :
-            self.numb_fparam = self.fitting.get_numb_fparam()
+        if fitting_type == 'ener' and  fitting.get_numb_fparam() > 0 :
+            self.numb_fparam = fitting.get_numb_fparam()
         else :
             self.numb_fparam = 0
 

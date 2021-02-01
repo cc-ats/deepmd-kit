@@ -86,7 +86,7 @@ def train(args) :
         # serial training
         _do_work(jdata, run_opt)
 
-def train——(trainer, data, descrpt, loss_func, is_distrib=False):
+def train_(trainer, data, descrpt, loss_func, is_distrib=False):
     assert isinstance(trainer, AbstractTrainer)
     assert isinstance(data,    AbstractTrainer)
     assert isinstance(descrpt, AbstractDescrpt)
