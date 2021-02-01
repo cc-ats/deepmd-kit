@@ -23,27 +23,28 @@ class AbstractLearningRate(object):
 
 #TODO!
 class LearningRateExp (AbstractLearningRate) :
-    def __init__ (self) :
-        pass
-
-    def init_param (self, decay_steps, decay_rate, start_lr, stop_lr) : 
+    def __init__ (self, decay_steps, decay_rate, start_lr, stop_lr) : 
         self.decay_steps_ = decay_steps 
         self.decay_rate_  = decay_rate  
+        self.start_lr_    = start_lr     
         self.stop_lr_     = stop_lr     
-        self.decay_steps_ = decay_steps
 
+    @classmethod
     def init_param_jdata (self, jdata) :
         args = ClassArg()\
                .add('decay_steps',      int,    must = False)\
                .add('decay_rate',       float,  must = False)\
                .add('start_lr',         float,  must = True)\
                .add('stop_lr',          float,  must = False)
-        cd = args.parse(jdata)
-        self.start_lr_    = cd['start_lr']
-        self.decay_steps_ = cd['decay_steps']
-        self.decay_rate_  = cd['decay_rate']  
-        self.stop_lr_     = cd['stop_lr']     
-        self.decay_steps_ = cd['decay_steps']
+
+        cd           = args.parse(jdata)
+        decay_steps_ = cd['decay_steps']
+        decay_rate_  = cd['decay_rate']  
+        start_lr_    = cd['start_lr']
+        stop_lr_     = cd['stop_lr']     
+
+        return self(decay_steps_, decay_rate_, start_lr_, stop_lr_)
+
 
     def build(self, global_step, stop_batch = None) :
         if stop_batch is None:            
