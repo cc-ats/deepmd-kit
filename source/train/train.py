@@ -48,7 +48,7 @@ def j_must_have (jdata, key) :
     else :
         return jdata[key]
 
-def train_(args) :
+def train(args) :
     # load json database
     jdata = j_loader(args.INPUT)
 
@@ -86,7 +86,7 @@ def train_(args) :
         # serial training
         _do_work(jdata, run_opt)
 
-def train(trainer, data, descrpt, loss_func, is_distrib=False):
+def train——(trainer, data, descrpt, loss_func, is_distrib=False):
     assert isinstance(trainer, AbstractTrainer)
     assert isinstance(data,    AbstractTrainer)
     assert isinstance(descrpt, AbstractDescrpt)

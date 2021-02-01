@@ -85,7 +85,9 @@ class NNPTrainer (AbstractTrainer):
 # from deepmd.LearningRate    import AbstractLearningRate
 # from deepmd.Loss            import AbstractLossFunc
 
-    def __init__(self, descrpt_obj, fitting_obj, run_opt,
+    def __init__(self, run_opt,
+                       descrpt_obj         = None,
+                       fitting_obj         = None,
                        model_obj           = None,
                        lr_obj              = None,
                        loss_func_obj       = None,
@@ -101,36 +103,40 @@ class NNPTrainer (AbstractTrainer):
                        sys_probs           = None,
                        auto_prob_style     = "prob_sys_size"):
         self.run_opt = run_opt
-        # descriptor
-        assert isinstance(descrpt_obj, AbstractDescrpt)
 
-        # fitting net
-        assert isinstance(fitting_obj, AbstractFitting)
+        has_descrpt = descrpt_obj is not None
+        has_fitting = fitting_obj is not None
+        has_model   = model_obj   is not None
 
-        # check for consistency, more child classes could be designed here
-        if isinstance(fitting_obj, EnerFitting):
-            pass
-        elif isinstance(fitting_obj, WFCFitting):
-            pass
-        elif isinstance(fitting_obj, DipoleFittingSeA):
-            assert isinstance(descrpt_obj, DescrptSeA)    
-        elif isinstance(fitting_obj, PolarFittingLocFrame):
-            assert isinstance(descrpt_obj, DescrptLocFrame)    
-        elif isinstance(fitting_obj, PolarFittingSeA):
-            assert isinstance(descrpt_obj, DescrptSeA)
-        elif isinstance(fitting_obj, GlobalPolarFittingSeA):
-            assert isinstance(descrpt_obj, DescrptSeA)
+        assert (has_descrpt and has_fitting) or has_model
 
-        self.descrpt = descrpt_obj
-        self.fitting = fitting_obj
-        self.fitting.set_descrpt_param(self.descrpt)
-        
+        if has_descrpt and has_fitting: 
+            # descriptor
+            assert isinstance(descrpt_obj, AbstractDescrpt)
+
+            # fitting net
+            assert isinstance(fitting_obj, AbstractFitting)
+
+            # check for consistency, more child classes could be designed here
+            if isinstance(fitting_obj, EnerFitting):
+                pass
+            elif isinstance(fitting_obj, WFCFitting):
+                pass
+            elif isinstance(fitting_obj, DipoleFittingSeA):
+                assert isinstance(descrpt_obj, DescrptSeA)    
+            elif isinstance(fitting_obj, PolarFittingLocFrame):
+                assert isinstance(descrpt_obj, DescrptLocFrame)    
+            elif isinstance(fitting_obj, PolarFittingSeA):
+                assert isinstance(descrpt_obj, DescrptSeA)
+            elif isinstance(fitting_obj, GlobalPolarFittingSeA):
+                assert isinstance(descrpt_obj, DescrptSeA)
+
+            self.descrpt = descrpt_obj
+            self.fitting = fitting_obj
+            self.fitting.set_descrpt_param(self.descrpt)
+
         # TODO!: ----------------------------------------------------------------------
         # TODO!: more child classes could be designed here
-        # init model
-        # infer model type by fitting_type
-        self.model  = model_obj
-        if model_obj is None:
             model_param = None # TODO!
             if isinstance(fitting_obj, EnerFitting):
                 self.model = Model(model_param, self.descrpt, self.fitting)
@@ -144,8 +150,10 @@ class NNPTrainer (AbstractTrainer):
                 self.model = GlobalPolarModel(model_param, self.descrpt, self.fitting)
             else :
                 raise RuntimeError('get unknown fitting type when building model')
-        assert isinstance(self.model, AbstractModel)
         # TODO!: ----------------------------------------------------------------------
+        elif has_model:
+            self.model  = model_obj
+        assert isinstance(self.model, AbstractModel)
         
         # TODO!: ----------------------------------------------------------------------
         # learning rate

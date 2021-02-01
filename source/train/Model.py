@@ -1,4 +1,6 @@
 import numpy as np
+from abc import ABC, abstractmethod 
+
 from deepmd.env import tf
 from collections import defaultdict
 from deepmd.TabInter import TabInter
@@ -66,7 +68,10 @@ def merge_sys_stat(all_stat):
     return ret
 
 
-class Model() :
+class AbstractModel(ABC):
+    pass
+
+class Model(AbstractModel) :
     model_type = 'ener'
 
     def __init__ (self, jdata, descrpt, fitting):
@@ -98,7 +103,6 @@ class Model() :
             self.sw_rmax = class_data['sw_rmax']
         else :
             self.srtab = None
-
 
     def get_rcut (self) :
         return self.rcut
