@@ -104,37 +104,44 @@ class AbstractModel(ABC):
 class Model(AbstractModel) :
     model_type = 'ener'
 
-    def __init__ (self, jdata, descrpt, fitting):
-        self.descrpt = descrpt
-        self.rcut = self.descrpt.get_rcut()
-        self.ntypes = self.descrpt.get_ntypes()
-        # fitting
-        self.fitting = fitting
-        self.numb_fparam = self.fitting.get_numb_fparam()
+    def __init__ (self, data_stat_nbatch=10,
+                        data_stat_protect=1e-2,
+                        use_srtab=None,
+                        type_map=[],
+                        smin_alpha=None,
+                        sw_rmin=None,
+                        sw_rmax=None):
 
-        args = ClassArg()\
-               .add('type_map',         list,   default = []) \
-               .add('data_stat_nbatch', int,    default = 10) \
-               .add('data_stat_protect',float,  default = 1e-2) \
-               .add('use_srtab',        str)
-        class_data = args.parse(jdata)
-        self.type_map = class_data['type_map']
-        self.srtab_name = class_data['use_srtab']
-        self.data_stat_nbatch = class_data['data_stat_nbatch']
-        self.data_stat_protect = class_data['data_stat_protect']
-        if self.srtab_name is not None :
-            self.srtab = TabInter(self.srtab_name)
-            args.add('smin_alpha',      float,  must = True)\
-                .add('sw_rmin',         float,  must = True)\
-                .add('sw_rmax',         float,  must = True)
-            class_data = args.parse(jdata)
-            self.smin_alpha = class_data['smin_alpha']
-            self.sw_rmin = class_data['sw_rmin']
-            self.sw_rmax = class_data['sw_rmax']
+        self.descrpt     = None
+        self.rcut        = None
+        self.ntypes      = None
+        self.fitting     = None
+        self.numb_fparam = None
+
+        self.type_map          = type_map
+        self.srtab_name        = use_srtab
+        self.data_stat_nbatch  = data_stat_nbatch
+        self.data_stat_protect = data_stat_protect
+
+        if use_srtab is not None :
+            assert smin_alpha is not None
+            assert sw_rmin    is not None
+            assert sw_rmax    is not None
+            self.srtab = TabInter(use_srtab)
+            self.smin_alpha = smin_alpha
+            self.sw_rmin    = sw_rmin
+            self.sw_rmax    = sw_rmax
         else :
-            self.srtab = None
+            self.srtab      = None
+            self.smin_alpha = None
+            self.sw_rmin    = None
+            self.sw_rmax    = None
 
-    def set_descrpt_fitting(self, )
+    def set_descrpt_fitting(self, descrpt, fitting):
+        self.fitting     = fitting
+        self.numb_fparam = self.fitting.get_numb_fparam()
+        self.descrpt     = descrpt
+        self.rcut        = self.descrpt.get_rcut()
 
     def get_rcut (self) :
         return self.rcut
