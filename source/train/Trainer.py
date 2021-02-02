@@ -78,20 +78,12 @@ class AbstractTrainer(ABC):
         pass
 
 class NNPTrainer (AbstractTrainer):
-    # def __init__(self, jdata, run_opt):
-    #     self.run_opt = run_opt
-
-# from deepmd.DescrptLocFrame import AbstractDescrpt
-# from deepmd.Fitting         import AbstractFitting
-# from deepmd.LearningRate    import AbstractLearningRate
-# from deepmd.Loss            import AbstractLossFunc
-
     def __init__(self, run_opt,
                        descrpt_obj         = None,
                        fitting_obj         = None,
                        model_obj           = None,
-                       lr_obj              = None,
                        loss_obj            = None,
+                       lr_obj              = None,
                        numb_test           = 1,
                        disp_file           = 'lcurve.out',
                        disp_freq           = 100,
@@ -103,45 +95,49 @@ class NNPTrainer (AbstractTrainer):
                        profiling_filestr   = 'timeline.json',
                        sys_probs           = None,
                        auto_prob_style     = "prob_sys_size"):
-        self.run_opt = run_opt
 
+        self.run_opt = run_opt
         has_descrpt = descrpt_obj   is not None
         has_fitting = fitting_obj   is not None
         has_model   = model_obj     is not None
         has_loss    = loss_obj      is not None
 
-        assert (has_descrpt and has_fitting) or (has_model and has_loss)
+        self.descrpt = None
+        self.fitting = None
+        self.model   = None
+        self.loss    = None
 
-        if has_descrpt and has_fitting: 
-            # descriptor
-            assert isinstance(descrpt_obj, AbstractDescrpt)
+        assert (has_descrpt and has_fitting)
+        # descriptor
+        assert isinstance(descrpt_obj, AbstractDescrpt)
+        # fitting net
+        assert isinstance(fitting_obj, AbstractFitting)
+        # check for consistency, more child classes could be designed here
+        if   isinstance(fitting_obj, EnerFitting):
+            pass
+        elif isinstance(fitting_obj, WFCFitting):
+            pass
+        elif isinstance(fitting_obj, DipoleFittingSeA):
+            assert isinstance(descrpt_obj, DescrptSeA)    
+        elif isinstance(fitting_obj, PolarFittingLocFrame):
+            assert isinstance(descrpt_obj, DescrptLocFrame)    
+        elif isinstance(fitting_obj, PolarFittingSeA):
+            assert isinstance(descrpt_obj, DescrptSeA)
+        elif isinstance(fitting_obj, GlobalPolarFittingSeA):
+            assert isinstance(descrpt_obj, DescrptSeA)
 
-            # fitting net
-            assert isinstance(fitting_obj, AbstractFitting)
+        if (has_descrpt and has_fitting) and not (has_model and has_loss): 
 
-            # check for consistency, more child classes could be designed here
-            if isinstance(fitting_obj, EnerFitting):
-                pass
-            elif isinstance(fitting_obj, WFCFitting):
-                pass
-            elif isinstance(fitting_obj, DipoleFittingSeA):
-                assert isinstance(descrpt_obj, DescrptSeA)    
-            elif isinstance(fitting_obj, PolarFittingLocFrame):
-                assert isinstance(descrpt_obj, DescrptLocFrame)    
-            elif isinstance(fitting_obj, PolarFittingSeA):
-                assert isinstance(descrpt_obj, DescrptSeA)
-            elif isinstance(fitting_obj, GlobalPolarFittingSeA):
-                assert isinstance(descrpt_obj, DescrptSeA)
-
-            descrpt = descrpt_obj
-            fitting = fitting_obj
-            fitting.set_descrpt_param(descrpt)
+            self.descrpt = descrpt_obj
+            self.fitting = fitting_obj
+            self.fitting.set_descrpt_param(self.descrpt)
 
         # TODO!: ----------------------------------------------------------------------
         # TODO!: more child classes could be designed here
             model_param = None # TODO!
             if isinstance(fitting_obj, EnerFitting):
-                self.model = Model(model_param, descrpt, fitting)
+                self.model = Model(model_param)
+                self.model.set_descrpt_fitting(descrpt, fitting)
             elif isinstance(fitting_obj, WFCFitting):
                 self.model = WFCModel(model_param, descrpt, fitting)
             elif isinstance(fitting_obj, DipoleFittingSeA):

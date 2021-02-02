@@ -69,7 +69,37 @@ def merge_sys_stat(all_stat):
 
 
 class AbstractModel(ABC):
-    pass
+    @abstractmethod
+    def __init__(self):
+        pass
+
+    @abstractmethod
+    def init_param_jdata(self):
+        pass
+
+    @abstractmethod
+    def set_descrpt_fitting(self):
+        pass
+    
+    @abstractmethod
+    def get_rcut(self):
+        pass
+
+    @abstractmethod
+    def get_ntypes(self):
+        pass
+
+    @abstractmethod
+    def get_type_map(self):
+        pass
+
+    @abstractmethod
+    def data_stat(self):
+        pass
+
+    @abstractmethod
+    def build(self):
+        pass
 
 class Model(AbstractModel) :
     model_type = 'ener'
@@ -103,6 +133,8 @@ class Model(AbstractModel) :
             self.sw_rmax = class_data['sw_rmax']
         else :
             self.srtab = None
+
+    def set_descrpt_fitting(self, )
 
     def get_rcut (self) :
         return self.rcut
