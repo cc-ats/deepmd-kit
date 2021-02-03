@@ -117,7 +117,7 @@ class NNPTrainer (AbstractTrainer):
             assert isinstance(descrpt_obj, DescrptSeA)
         elif isinstance(fitting_obj, GlobalPolarFittingSeA):
             assert isinstance(descrpt_obj, DescrptSeA)
-        fitting_obj.set_descrpt_param(descrpt_obj)
+        fitting_obj.set_descrpt(descrpt_obj)
 
         if   isinstance(fitting_obj, EnerFitting):
             assert isinstance(model_obj, EneModel)

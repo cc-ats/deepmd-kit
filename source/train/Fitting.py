@@ -87,7 +87,7 @@ class EnerFitting (AbstractFitting):
             self.aparam_std = None
             self.aparam_inv_std = None
 
-    def set_descrpt_param(self, descrpt):
+    def set_descrpt(self, descrpt):
         assert isinstance(descrpt, AbstractDescrpt)
         self.ntypes = descrpt.get_ntypes()
         self.dim_descrpt = descrpt.get_dim_out()
@@ -332,7 +332,7 @@ class WFCFitting (AbstractFitting) :
         self.fitting_precision     = get_precision(precision)
         self.useBN                 = False
 
-    def set_descrpt_param(self, descrpt) :
+    def set_descrpt(self, descrpt) :
         if not isinstance(descrpt, DescrptLocFrame) :
             raise RuntimeError('WFC only supports DescrptLocFrame')
         self.ntypes      = descrpt.get_ntypes()
@@ -442,7 +442,7 @@ class PolarFittingLocFrame (AbstractFitting) :
         self.fitting_precision     = get_precision(precision)
         self.useBN = False
 
-    def set_descrpt_param(self, descrpt) :
+    def set_descrpt(self, descrpt) :
         if not isinstance(descrpt, DescrptLocFrame) :
             raise RuntimeError('PolarFittingLocFrame only supports DescrptLocFrame')
         self.ntypes      = descrpt.get_ntypes()

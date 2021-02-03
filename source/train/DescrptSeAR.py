@@ -9,18 +9,28 @@ from deepmd.env import op_module
 from DescrptLocFrame import AbstractDescrpt
 
 class DescrptSeAR (AbstractDescrpt):
-    def __init__ (self, jdata):
+    def __init__ (self, descrpt_a, descrpt_r):
+        assert isinstance(descrpt_a, DescrptSeA)
+        assert isinstance(descrpt_r, DescrptSeR)
+        self.descrpt_a = descrpt_a
+        self.descrpt_r = descrpt_r
+        assert(self.descrpt_a.get_ntypes() == self.descrpt_r.get_ntypes())
+        self.davg = None
+        self.dstd = None
+
+    @classmethod
+    def init_param_jdata(cls, jdata):
         args = ClassArg()\
                .add('a',      dict,   must = True) \
                .add('r',      dict,   must = True) 
         class_data = args.parse(jdata)
-        self.param_a = class_data['a']
-        self.param_r = class_data['r']
-        self.descrpt_a = DescrptSeA(self.param_a)
-        self.descrpt_r = DescrptSeR(self.param_r)        
-        assert(self.descrpt_a.get_ntypes() == self.descrpt_r.get_ntypes())
-        self.davg = None
-        self.dstd = None
+        param_a = class_data['a']
+        param_r = class_data['r']
+
+        descrpt_a = DescrptSeA.init_param_jdata(param_a)
+        descrpt_r = DescrptSeR.init_param_jdata(param_r)        
+
+        return cls(descrpt_a, descrpt_r)
 
     def get_rcut (self) :
         return np.max([self.descrpt_a.get_rcut(), self.descrpt_r.get_rcut()])
