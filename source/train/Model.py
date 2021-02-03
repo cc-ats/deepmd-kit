@@ -262,11 +262,6 @@ class Model(AbstractModel) :
             nnei_a = np.cumsum(sel_a)[-1]
             nnei_r = np.cumsum(sel_r)[-1]
 
-        print("dout = ", dout)
-        print("input_dict = ", input_dict)
-        print("natoms = ", natoms)
-        print("reuse = ", reuse)
-        print("suffix = ", suffix)
         atom_ener = self.fitting.build (dout, 
                                         input_dict, 
                                         natoms, 

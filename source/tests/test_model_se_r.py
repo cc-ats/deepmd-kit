@@ -37,9 +37,11 @@ class TestModel(unittest.TestCase):
         test_data = data.get_test ()
         numb_test = 1
         
-        descrpt = DescrptSeR(jdata['model']['descriptor'])
-        fitting = EnerFitting(jdata['model']['fitting_net'], descrpt)
-        model = Model(jdata['model'], descrpt, fitting)
+        descrpt = DescrptSeR.init_param_jdata(jdata['model']['descriptor'])
+        fitting = EnerFitting.init_param_jdata(jdata['model']['fitting_net'])
+        fitting.set_descrpt(descrpt)
+        model = Model.init_param_jdata(jdata['model'])
+        model.set_descrpt_fitting(descrpt, fitting)
 
         # model._compute_dstats([test_data['coord']], [test_data['box']], [test_data['type']], [test_data['natoms_vec']], [test_data['default_mesh']])
         input_data = {'coord' : [test_data['coord']], 

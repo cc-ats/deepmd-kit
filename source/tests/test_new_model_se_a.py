@@ -45,6 +45,7 @@ class TestModel(unittest.TestCase):
         descrpt = DescrptSeA(sel, rcut=rcut, rcut_smth=rcut_smth, neuron=neuron,
                         axis_neuron=axis_neuron, resnet_dt=resnet_dt, seed=seed)
         fitting = EnerFitting.init_param_jdata(jdata['model'])
+        fitting.set_descrpt(descrpt)
         model   = Model.init_param_jdata(jdata['model'])
         model.set_descrpt_fitting(descrpt, fitting)
 
@@ -82,7 +83,7 @@ class TestModel(unittest.TestCase):
         energy    = model_pred['energy']
         force     = model_pred['force']
         virial    = model_pred['virial']
-        atom_ener =  model_pred['atom_ener']
+        atom_ener = model_pred['atom_ener']
 
         feed_dict_test = {t_prop_c:        test_data['prop_c'],
                           t_energy:        test_data['energy']              [:numb_test],

@@ -236,6 +236,7 @@ class EnerFitting (AbstractFitting):
                                                 initializer = tf.constant_initializer(self.aparam_inv_std))
             
         start_index = 0
+
         inputs = tf.cast(tf.reshape(inputs, [-1, self.dim_descrpt * natoms[0]]), self.fitting_precision)
 
         if bias_atom_e is not None :

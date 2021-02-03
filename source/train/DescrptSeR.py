@@ -8,7 +8,7 @@ from deepmd.env import default_tf_session_config
 
 from deepmd.DescrptLocFrame import AbstractDescrpt
 
-class DescrptSeA (AbstractDescrpt):
+class DescrptSeR (AbstractDescrpt):
     def __init__ (self, sel, rcut=6.0,      rcut_smth=0.5,   neuron=[10, 20, 40],
                              axis_neuron=4, resnet_dt=False, trainable=True,
                              seed=None,     type_one_side=False,
