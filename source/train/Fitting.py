@@ -118,7 +118,7 @@ class EnerFitting (AbstractFitting):
         trainable           = class_data['trainable']
         atom_ener           = class_data['atom_ener']
         
-        return cls(numb_fparam=numb_fparam,
+        return cls( numb_fparam=numb_fparam,
                     numb_aparam=numb_aparam,
                     neuron=n_neuron,
                     resnet_dt=resnet_dt,

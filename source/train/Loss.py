@@ -1,26 +1,30 @@
 import numpy as np
+from abc import ABC, abstractmethod 
+
 from deepmd.env import tf
 from deepmd.common import ClassArg, add_data_requirement
 
 from deepmd.RunOptions import global_cvt_2_tf_float
 from deepmd.RunOptions import global_cvt_2_ener_float
 
-class AbstractLossFunc(object):
+class AbstractLossFunc(ABC):
+    @abstractmethod
     def __init__(self):
         pass
 
-    def init_param(self):
-        pass
-
+    @abstractmethod
     def init_param_jdata(self):
         pass
 
+    @abstractmethod
     def build(self):
         pass
 
+    @abstractmethod
     def print_header(self):
         pass
 
+    @abstractmethod
     def print_on_training(self):
         pass
 
@@ -84,13 +88,20 @@ class EnerStdLoss (AbstractLossFunc) :
         limit_pref_pf = class_data['limit_pref_pf']
         relative_f = class_data['relative_f']
 
-        cls(starter_learning_rate, start_pref_e=start_pref_e, limit_pref_e=limit_pref_e,
-            start_pref_f=start_pref_f, limit_pref_f=limit_pref_f,
-            start_pref_v=start_pref_v, limit_pref_v=limit_pref_v,
-            start_pref_ae=start_pref_ae, limit_pref_ae=limit_pref_ae,
-            start_pref_pf=start_pref_pf, limit_pref_pf=limit_pref_pf,
+        return cls(
+            starter_learning_rate,
+            start_pref_e=start_pref_e,
+            limit_pref_e=limit_pref_e,
+            start_pref_f=start_pref_f,
+            limit_pref_f=limit_pref_f,
+            start_pref_v=start_pref_v,
+            limit_pref_v=limit_pref_v,
+            start_pref_ae=start_pref_ae,
+            limit_pref_ae=limit_pref_ae,
+            start_pref_pf=start_pref_pf,
+            limit_pref_pf=limit_pref_pf,
             relative_f=relative_f
-        )
+            )
 
     def build (self, 
                learning_rate,
@@ -243,14 +254,17 @@ class EnerDipoleLoss (AbstractLossFunc) :
             .add('limit_pref_ed',       float,  must = True, default = 1.00)
         class_data = args.parse(jdata)
         
-        start_pref_e = class_data['start_pref_e']
-        limit_pref_e = class_data['limit_pref_e']
+        start_pref_e  = class_data['start_pref_e']
+        limit_pref_e  = class_data['limit_pref_e']
         start_pref_ed = class_data['start_pref_ed']
         limit_pref_ed = class_data['limit_pref_ed']
 
-        cls(starter_learning_rate=starter_learning_rate,
-            start_pref_e=start_pref_e, limit_pref_e=limit_pref_e,
-            start_pref_ed=start_pref_ed, limit_pref_ed=limit_pref_ed
+        return cls(
+                starter_learning_rate,
+                start_pref_e=start_pref_e,
+                limit_pref_e=limit_pref_e,
+                start_pref_ed=start_pref_ed,
+                limit_pref_ed=limit_pref_ed
             )
 
     def build (self, 
@@ -332,12 +346,7 @@ class EnerDipoleLoss (AbstractLossFunc) :
 
 
 class TensorLoss (AbstractLossFunc) :
-    def __init__ (self, model, tensor_name, tensor_size, label_name, atomic=True, scale=1.0) :
-        try:
-            model    = model
-            type_sel = model.get_sel_type()
-        except :
-            type_sel = None
+    def __init__ (self, tensor_name, tensor_size, label_name, type_sel=None, atomic=True, scale=1.0) :
         
         self.tensor_name = tensor_name
         self.tensor_size = tensor_size
@@ -370,7 +379,14 @@ class TensorLoss (AbstractLossFunc) :
         else:
             scale = 1.0
         
-        cls(model, tensor_name, tensor_size, label_name, atomic=atomic, scale=scale)
+        return cls(
+                    tensor_name,
+                    tensor_size,
+                    label_name,
+                    type_sel=type_sel,
+                    atomic=atomic,
+                    scale=scale
+                )
 
     def build (self, 
                learning_rate,
@@ -379,9 +395,10 @@ class TensorLoss (AbstractLossFunc) :
                label_dict,
                suffix):        
         polar_hat = label_dict[self.label_name]
-        polar = model_dict[self.tensor_name]
-        l2_loss = tf.reduce_mean( tf.square(self.scale*(polar - polar_hat)), name='l2_'+suffix)
+        polar     = model_dict[self.tensor_name]
+        l2_loss   = tf.reduce_mean( tf.square(self.scale*(polar - polar_hat)), name='l2_'+suffix)
         more_loss = {'nonorm': l2_loss}
+        
         if not self.atomic :
             atom_norm  = 1./ global_cvt_2_tf_float(natoms[0]) 
             l2_loss = l2_loss * atom_norm

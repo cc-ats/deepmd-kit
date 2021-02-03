@@ -6,6 +6,9 @@ from collections import defaultdict
 from deepmd.TabInter import TabInter
 from deepmd.common import ClassArg
 
+from deepmd.DescrptLocFrame import AbstractDescrpt
+from deepmd.Fitting         import AbstractFitting
+
 from deepmd.RunOptions import global_cvt_2_ener_float
 from deepmd.env import op_module
 
@@ -102,8 +105,6 @@ class AbstractModel(ABC):
         pass
 
 class Model(AbstractModel) :
-    model_type = 'ener'
-
     def __init__ (self, data_stat_nbatch=10,
                         data_stat_protect=1e-2,
                         use_srtab=None,
@@ -112,11 +113,16 @@ class Model(AbstractModel) :
                         sw_rmin=None,
                         sw_rmax=None):
 
+        self.model_type  = 'ener'       
         self.descrpt     = None
         self.rcut        = None
         self.ntypes      = None
         self.fitting     = None
         self.numb_fparam = None
+
+        self.type_map          = type_map
+        self.data_stat_nbatch  = data_stat_nbatch
+        self.data_stat_protect = data_stat_protect
 
         self.type_map          = type_map
         self.srtab_name        = use_srtab
@@ -138,10 +144,13 @@ class Model(AbstractModel) :
             self.sw_rmax    = None
 
     def set_descrpt_fitting(self, descrpt, fitting):
+        assert isinstance(descrpt,   AbstractDescrpt)
+        assert isinstance(fitting,   AbstractFitting)
         self.fitting     = fitting
         self.numb_fparam = self.fitting.get_numb_fparam()
         self.descrpt     = descrpt
         self.rcut        = self.descrpt.get_rcut()
+        self.ntypes      = self.descrpt.get_ntypes()
 
     @classmethod
     def init_param_jdata(cls, jdata):
@@ -339,28 +348,31 @@ class Model(AbstractModel) :
 EneModel = Model
 
 class TensorModel(AbstractModel) :
-    def __init__ (self, var_name, type_map, data_stat_nbatch, data_stat_protect):
-        self.model_type = var_name        
-        self.descrpt    = None
-        self.rcut       = None
-        self.ntypes     = None
-        self.fitting    = None
+    def __init__ (self, var_name, type_map=[], data_stat_nbatch=10, data_stat_protect=1e-2):
+        self.model_type  = var_name        
+        self.descrpt     = None
+        self.rcut        = None
+        self.ntypes      = None
+        self.fitting     = None
+        self.numb_fparam = None
 
-        args = ClassArg()\
-               .add('type_map',         list,   default = []) \
-               .add('data_stat_nbatch', int,    default = 10) \
-               .add('data_stat_protect',float,  default = 1e-2)
-        class_data = args.parse(jdata)
-        self.type_map = class_data['type_map']
-        self.data_stat_nbatch = class_data['data_stat_nbatch']
-        self.data_stat_protect = class_data['data_stat_protect']
+        self.type_map          = type_map
+        self.data_stat_nbatch  = data_stat_nbatch
+        self.data_stat_protect = data_stat_protect
 
-    def __init__ (self, jdata, descrpt, fitting, var_name):
-        self.model_type = var_name        
+    def set_descrpt_fitting(self, descrpt, fitting):
+        assert isinstance(descrpt,   AbstractDescrpt)
+        assert isinstance(fitting,   AbstractFitting)
+        self.fitting     = fitting
+        self.numb_fparam = self.fitting.get_numb_fparam()
+        self.descrpt     = descrpt
+        self.rcut        = self.descrpt.get_rcut()
+        self.ntypes      = self.descrpt.get_ntypes()
+
+    def set_descrpt_fitting (self, descrpt, fitting):
         self.descrpt = descrpt
-        self.rcut = self.descrpt.get_rcut()
-        self.ntypes = self.descrpt.get_ntypes()
-        # fitting
+        self.rcut    = self.descrpt.get_rcut()
+        self.ntypes  = self.descrpt.get_ntypes()
         self.fitting = fitting
 
         args = ClassArg()\

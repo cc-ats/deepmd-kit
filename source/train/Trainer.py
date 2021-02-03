@@ -141,7 +141,6 @@ class NNPTrainer (AbstractTrainer):
             assert isinstance(loss_obj, TensorLoss)
         elif isinstance(fitting_obj, GlobalPolarFittingSeA):
             assert isinstance(loss_obj, TensorLoss)
-        loss_obj.set_descrpt_fitting(descrpt_obj, fitting_obj)
 
         self.descrpt = descrpt_obj
         self.fitting = fitting_obj
@@ -160,6 +159,7 @@ class NNPTrainer (AbstractTrainer):
         self.sys_probs           = sys_probs        
         self.auto_prob_style     = auto_prob_style        
         self.useBN = False
+
         if isinstance(self.fitting, EnerFitting) and self.fitting.get_numb_fparam() > 0 :
             self.numb_fparam = self.fitting.get_numb_fparam()
         else :
