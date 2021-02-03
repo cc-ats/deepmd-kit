@@ -168,13 +168,13 @@ class Model(AbstractModel) :
             sw_rmin    = None
             sw_rmax    = None
 
-        cls(data_stat_nbatch=data_stat_nbatch,
-            data_stat_protect=data_stat_protect,
-            use_srtab=srtab_name,
-            type_map=type_map,
-            smin_alpha=smin_alpha,
-            sw_rmin=sw_rmin,
-            sw_rmax=sw_rmax)
+        return cls(data_stat_nbatch=data_stat_nbatch,
+                   data_stat_protect=data_stat_protect,
+                   use_srtab=srtab_name,
+                   type_map=type_map,
+                   smin_alpha=smin_alpha,
+                   sw_rmin=sw_rmin,
+                   sw_rmax=sw_rmax)
 
     def get_rcut (self) :
         return self.rcut
@@ -186,7 +186,7 @@ class Model(AbstractModel) :
         return self.type_map
 
     def data_stat(self, data):
-        all_stat = make_all_stat(data, self.data_stat_nbatch, merge_sys = False)
+        all_stat   = make_all_stat(data, self.data_stat_nbatch, merge_sys = False)
         m_all_stat = merge_sys_stat(all_stat)
         self._compute_input_stat(m_all_stat, protection = self.data_stat_protect)
         self._compute_output_stat(all_stat)
@@ -338,7 +338,23 @@ class Model(AbstractModel) :
 
 EneModel = Model
 
-class TensorModel() :
+class TensorModel(AbstractModel) :
+    def __init__ (self, var_name, type_map, data_stat_nbatch, data_stat_protect):
+        self.model_type = var_name        
+        self.descrpt    = None
+        self.rcut       = None
+        self.ntypes     = None
+        self.fitting    = None
+
+        args = ClassArg()\
+               .add('type_map',         list,   default = []) \
+               .add('data_stat_nbatch', int,    default = 10) \
+               .add('data_stat_protect',float,  default = 1e-2)
+        class_data = args.parse(jdata)
+        self.type_map = class_data['type_map']
+        self.data_stat_nbatch = class_data['data_stat_nbatch']
+        self.data_stat_protect = class_data['data_stat_protect']
+
     def __init__ (self, jdata, descrpt, fitting, var_name):
         self.model_type = var_name        
         self.descrpt = descrpt

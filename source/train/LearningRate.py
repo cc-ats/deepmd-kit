@@ -1,23 +1,27 @@
+from abc import ABC, abstractmethod 
+
 import numpy as np
 from deepmd.env import tf
 from deepmd.common import ClassArg
 
-class AbstractLearningRate(object):
+class AbstractLearningRate(ABC):
+    @abstractmethod
     def __init__(self):
         pass
 
-    def init_param(self):
-        pass
-
+    @abstractmethod
     def init_param_jdata(self):
         pass
 
+    @abstractmethod
     def build(self):
         pass
 
+    @abstractmethod
     def start_lr(self):
         pass
 
+    @abstractmethod
     def value(self):
         pass
 
@@ -30,7 +34,7 @@ class LearningRateExp (AbstractLearningRate) :
         self.stop_lr_     = stop_lr     
 
     @classmethod
-    def init_param_jdata (self, jdata) :
+    def init_param_jdata (cls, jdata) :
         args = ClassArg()\
                .add('decay_steps',      int,    must = False)\
                .add('decay_rate',       float,  must = False)\
@@ -43,7 +47,7 @@ class LearningRateExp (AbstractLearningRate) :
         start_lr_    = cd['start_lr']
         stop_lr_     = cd['stop_lr']     
 
-        return self(decay_steps_, decay_rate_, start_lr_, stop_lr_)
+        return cls(decay_steps_, decay_rate_, start_lr_, stop_lr_)
 
 
     def build(self, global_step, stop_batch = None) :
