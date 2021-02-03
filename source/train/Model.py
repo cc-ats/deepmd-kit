@@ -143,6 +143,39 @@ class Model(AbstractModel) :
         self.descrpt     = descrpt
         self.rcut        = self.descrpt.get_rcut()
 
+    @classmethod
+    def init_param_jdata(cls, jdata):
+        args = ClassArg()\
+               .add('type_map',         list,   default = []) \
+               .add('data_stat_nbatch', int,    default = 10) \
+               .add('data_stat_protect',float,  default = 1e-2) \
+               .add('use_srtab',        str)
+        class_data = args.parse(jdata)
+        type_map          = class_data['type_map']
+        srtab_name        = class_data['use_srtab']
+        data_stat_nbatch  = class_data['data_stat_nbatch']
+        data_stat_protect = class_data['data_stat_protect']
+        if srtab_name is not None :
+            args.add('smin_alpha',      float,  must = True)\
+                .add('sw_rmin',         float,  must = True)\
+                .add('sw_rmax',         float,  must = True)
+            class_data = args.parse(jdata)
+            smin_alpha = class_data['smin_alpha']
+            sw_rmin    = class_data['sw_rmin']
+            sw_rmax    = class_data['sw_rmax']
+        else :
+            smin_alpha = None
+            sw_rmin    = None
+            sw_rmax    = None
+
+        cls(data_stat_nbatch=data_stat_nbatch,
+            data_stat_protect=data_stat_protect,
+            use_srtab=srtab_name,
+            type_map=type_map,
+            smin_alpha=smin_alpha,
+            sw_rmin=sw_rmin,
+            sw_rmax=sw_rmax)
+
     def get_rcut (self) :
         return self.rcut
 
@@ -303,6 +336,7 @@ class Model(AbstractModel) :
         
         return model_dict
 
+EneModel = Model
 
 class TensorModel() :
     def __init__ (self, jdata, descrpt, fitting, var_name):

@@ -14,7 +14,7 @@ from deepmd.DescrptLocFrame import DescrptLocFrame
 from deepmd.DescrptSeA import DescrptSeA
 from deepmd.DescrptSeR import DescrptSeR
 from deepmd.DescrptSeAR import DescrptSeAR
-from deepmd.Model import Model, WFCModel, DipoleModel, PolarModel, GlobalPolarModel
+from deepmd.Model import EneModel, WFCModel, DipoleModel, PolarModel, GlobalPolarModel
 from deepmd.Loss import EnerStdLoss, EnerDipoleLoss, TensorLoss
 from deepmd.LearningRate import LearningRateExp
 
@@ -92,27 +92,19 @@ class NNPTrainer (AbstractTrainer):
                        display_in_training = True,
                        timing_in_training  = True,
                        profiling           = False,
-                       profiling_filestr   = 'timeline.json',
+                       profiling_file      = 'timeline.json',
                        sys_probs           = None,
-                       auto_prob_style     = "prob_sys_size"):
+                       auto_prob_style     = "prob_sys_size"
+                ):
 
         self.run_opt = run_opt
-        has_descrpt = descrpt_obj   is not None
-        has_fitting = fitting_obj   is not None
-        has_model   = model_obj     is not None
-        has_loss    = loss_obj      is not None
 
-        self.descrpt = None
-        self.fitting = None
-        self.model   = None
-        self.loss    = None
+        assert isinstance(descrpt_obj,   AbstractDescrpt)
+        assert isinstance(fitting_obj,   AbstractFitting)
+        assert isinstance(model_obj,       AbstractModel)
+        assert isinstance(loss_obj,     AbstractLossFunc)
+        assert isinstance(lr_obj,   AbstractLearningRate)
 
-        assert (has_descrpt and has_fitting)
-        # descriptor
-        assert isinstance(descrpt_obj, AbstractDescrpt)
-        # fitting net
-        assert isinstance(fitting_obj, AbstractFitting)
-        # check for consistency, more child classes could be designed here
         if   isinstance(fitting_obj, EnerFitting):
             pass
         elif isinstance(fitting_obj, WFCFitting):
@@ -125,141 +117,70 @@ class NNPTrainer (AbstractTrainer):
             assert isinstance(descrpt_obj, DescrptSeA)
         elif isinstance(fitting_obj, GlobalPolarFittingSeA):
             assert isinstance(descrpt_obj, DescrptSeA)
+        fitting_obj.set_descrpt_param(descrpt_obj)
 
-        if (has_descrpt and has_fitting) and not (has_model and has_loss): 
+        if   isinstance(fitting_obj, EnerFitting):
+            assert isinstance(model_obj, EneModel)
+        elif isinstance(fitting_obj, WFCFitting):
+            assert isinstance(model_obj, WFCModel)
+        elif isinstance(fitting_obj, DipoleFittingSeA):
+            assert isinstance(model_obj, DipoleModel)
+        elif isinstance(fitting_obj, PolarFittingSeA) or isinstance(fitting_obj, PolarFittingLocFrame):
+            assert isinstance(model_obj, PolarModel)
+        elif isinstance(fitting_obj, GlobalPolarFittingSeA):
+            assert isinstance(model_obj, GlobalPolarModel)
+        model_obj.set_descrpt_fitting(descrpt_obj, fitting_obj)
 
-            self.descrpt = descrpt_obj
-            self.fitting = fitting_obj
-            self.fitting.set_descrpt_param(self.descrpt)
+        if   isinstance(fitting_obj, EnerFitting):
+            assert isinstance(loss_obj, EnerStdLoss) or isinstance(loss_obj, EnerDipoleLoss)
+        elif isinstance(fitting_obj, WFCFitting):
+            assert isinstance(loss_obj, TensorLoss)
+        elif isinstance(fitting_obj, DipoleFittingSeA):
+            assert isinstance(loss_obj, TensorLoss)
+        elif isinstance(fitting_obj, PolarFittingSeA):
+            assert isinstance(loss_obj, TensorLoss)
+        elif isinstance(fitting_obj, GlobalPolarFittingSeA):
+            assert isinstance(loss_obj, TensorLoss)
+        loss_obj.set_descrpt_fitting(descrpt_obj, fitting_obj)
 
-        # TODO!: ----------------------------------------------------------------------
-        # TODO!: more child classes could be designed here
-            model_param = None # TODO!
-            if isinstance(fitting_obj, EnerFitting):
-                self.model = Model(model_param)
-                self.model.set_descrpt_fitting(descrpt, fitting)
-            elif isinstance(fitting_obj, WFCFitting):
-                self.model = WFCModel(model_param, descrpt, fitting)
-            elif isinstance(fitting_obj, DipoleFittingSeA):
-                self.model = DipoleModel(model_param, descrpt, fitting)
-            elif isinstance(fitting_obj, PolarFittingSeA) or isinstance(fitting_obj, PolarFittingLocFrame):
-                self.model = PolarModel(model_param, descrpt, fitting)
-            elif isinstance(fitting_obj, GlobalPolarFittingSeA):
-                self.model = GlobalPolarModel(model_param, descrpt, fitting)
-            else :
-                raise RuntimeError('get unknown fitting type when building model')
-        # TODO!: ----------------------------------------------------------------------
+        self.descrpt = descrpt_obj
+        self.fitting = fitting_obj
+        self.model   = model_obj
+        self.loss    = loss_obj
+        self.lr      = lr_obj
 
-        # TODO!: ----------------------------------------------------------------------
-            try :
-                loss_param = jdata['loss']
-                loss_type = loss_param.get('type', 'ener')
-            except:
-                loss_param = None
-                loss_type = 'ener'
-
-            if isinstance(fitting_obj, EnerFitting):
-                if loss_type == 'ener':
-                    self.loss = EnerStdLoss(loss_param, starter_learning_rate = self.lr.start_lr())
-                elif loss_type == 'ener_dipole':
-                    self.loss = EnerDipoleLoss(loss_param, starter_learning_rate = self.lr.start_lr())
-                else:
-                    raise RuntimeError('unknow loss type')
-            elif fitting_type == 'wfc':
-                self.loss = TensorLoss(loss_param, 
-                                    model = self.model, 
-                                    tensor_name = 'wfc',
-                                    tensor_size = self.model.get_out_size(),
-                                    label_name = 'wfc')
-            elif fitting_type == 'dipole':
-                self.loss = TensorLoss(loss_param, 
-                                    model = self.model, 
-                                    tensor_name = 'dipole',
-                                    tensor_size = 3,
-                                    label_name = 'dipole')
-            elif fitting_type == 'polar':
-                self.loss = TensorLoss(loss_param, 
-                                    model = self.model, 
-                                    tensor_name = 'polar',
-                                    tensor_size = 9,
-                                    label_name = 'polarizability')
-            elif fitting_type == 'global_polar':
-                self.loss = TensorLoss(loss_param, 
-                                    model = self.model, 
-                                    tensor_name = 'global_polar',
-                                    tensor_size = 9,
-                                    atomic = False,
-                                    label_name = 'polarizability')
-            else :
-                raise RuntimeError('get unknown fitting type when building loss function')
-        # TODO!: ----------------------------------------------------------------------
-
-        elif has_model and has_loss:
-            self.model  = model_obj
-            self.loss   = loss_obj
-        assert isinstance(self.model, AbstractModel)
-        
-        # TODO!: ----------------------------------------------------------------------
-        # learning rate
-        self.lr  = lr_obj
-        if lr_obj is None:
-            lr_param = None
-            self.lr  = LearningRateExp(lr_param)
-        assert isinstance(self.lr, AbstractLearningRate)
-        # TODO!: ----------------------------------------------------------------------
-
-        # training
-        training_param = j_must_have(jdata, 'training')
-        # TODO!: ----------------------------------------------------------------------
-
-        # ! first .add() altered by Marián Rynik
-        tr_args = ClassArg()\
-                  .add('numb_test',     [int, list, str],    default = 1)\
-                  .add('disp_file',     str,    default = 'lcurve.out')\
-                  .add('disp_freq',     int,    default = 100)\
-                  .add('save_freq',     int,    default = 1000)\
-                  .add('save_ckpt',     str,    default = 'model.ckpt')\
-                  .add('display_in_training', bool, default = True)\
-                  .add('timing_in_training',  bool, default = True)\
-                  .add('profiling',     bool,   default = False)\
-                  .add('profiling_file',str,    default = 'timeline.json')\
-                  .add('sys_probs',   list    )\
-                  .add('auto_prob_style', str, default = "prob_sys_size")
-        tr_data = tr_args.parse(training_param)
-        # not needed
-        # self.numb_test = tr_data['numb_test']
-        self.disp_file = tr_data['disp_file']
-        self.disp_freq = tr_data['disp_freq']
-        self.save_freq = tr_data['save_freq']
-        self.save_ckpt = tr_data['save_ckpt']
-        self.display_in_training = tr_data['display_in_training']
-        self.timing_in_training  = tr_data['timing_in_training']
-        self.profiling = tr_data['profiling']
-        self.profiling_file = tr_data['profiling_file']
-        self.sys_probs = tr_data['sys_probs']        
-        self.auto_prob_style = tr_data['auto_prob_style']        
+        self.disp_file           = disp_file
+        self.disp_freq           = disp_freq
+        self.save_freq           = save_freq
+        self.save_ckpt           = save_ckpt
+        self.display_in_training = display_in_training
+        self.timing_in_training  = timing_in_training
+        self.profiling           = profiling
+        self.profiling_file      = profiling_file
+        self.sys_probs           = sys_probs        
+        self.auto_prob_style     = auto_prob_style        
         self.useBN = False
-        if fitting_type == 'ener' and  fitting.get_numb_fparam() > 0 :
-            self.numb_fparam = fitting.get_numb_fparam()
+        if isinstance(self.fitting, EnerFitting) and self.fitting.get_numb_fparam() > 0 :
+            self.numb_fparam = self.fitting.get_numb_fparam()
         else :
             self.numb_fparam = 0
 
-    def init_param_jdata(self, jdata):
+    @classmethod
+    def init_param_jdata(cls, run_opt, jdata):
         # model config        
         model_param   = j_must_have(jdata, 'model')
         descrpt_param = j_must_have(model_param, 'descriptor')
         fitting_param = j_must_have(model_param, 'fitting_net')
 
-        # descriptor
         descrpt_type = j_must_have(descrpt_param, 'type')
-        if descrpt_type == 'loc_frame':
-            descrpt = DescrptLocFrame(descrpt_param)
+        if  descrpt_type == 'loc_frame':
+            descrpt = DescrptLocFrame.init_param_jdata(descrpt_param)
         elif descrpt_type == 'se_a' :
-            descrpt = DescrptSeA(descrpt_param)
+            descrpt = DescrptSeA.init_param_jdata(descrpt_param)
         elif descrpt_type == 'se_r' :
-            descrpt = DescrptSeR(descrpt_param)
+            descrpt = DescrptSeR.init_param_jdata(descrpt_param)
         elif descrpt_type == 'se_ar' :
-            descrpt = DescrptSeAR(descrpt_param)
+            descrpt = DescrptSeAR.init_param_jdata(descrpt_param)
         else :
             raise RuntimeError('unknow model type ' + descrpt_type)
 
@@ -269,24 +190,24 @@ class NNPTrainer (AbstractTrainer):
         except:
             fitting_type = 'ener'
         if fitting_type == 'ener':
-            fitting = EnerFitting(fitting_param, descrpt)
+            fitting = EnerFitting.init_param_jdata(fitting_param)
         elif fitting_type == 'wfc':            
-            fitting = WFCFitting(fitting_param, descrpt)
+            fitting = WFCFitting.init_param_jdata(fitting_param)
         elif fitting_type == 'dipole':
             if descrpt_type == 'se_a':
-                fitting = DipoleFittingSeA(fitting_param, descrpt)
+                fitting = DipoleFittingSeA.init_param_jdata(fitting_param)
             else :
                 raise RuntimeError('fitting dipole only supports descrptors: se_a')
         elif fitting_type == 'polar':
             if descrpt_type == 'loc_frame':
-                fitting = PolarFittingLocFrame(fitting_param, descrpt)
+                fitting = PolarFittingLocFrame.init_param_jdata(fitting_param)
             elif descrpt_type == 'se_a':
-                fitting = PolarFittingSeA(fitting_param, descrpt)
+                fitting = PolarFittingSeA.init_param_jdata(fitting_param)
             else :
                 raise RuntimeError('fitting polar only supports descrptors: loc_frame and se_a')
         elif fitting_type == 'global_polar':
             if descrpt_type == 'se_a':
-                fitting = GlobalPolarFittingSeA(fitting_param, descrpt)
+                fitting = GlobalPolarFittingSeA.init_param_jdata(fitting_param)
             else :
                 raise RuntimeError('fitting global_polar only supports descrptors: loc_frame and se_a')
         else :
@@ -294,16 +215,16 @@ class NNPTrainer (AbstractTrainer):
 
         # init model
         # infer model type by fitting_type
-        if fitting_type == Model.model_type:
-            self.model = Model(model_param, descrpt, fitting)
+        if  fitting_type == EneModel.model_type:
+            model = EneModel.init_param_jdata(model_param)
         elif fitting_type == 'wfc':
-            self.model = WFCModel(model_param, descrpt, fitting)
+            model = WFCModel.init_param_jdata(model_param)
         elif fitting_type == 'dipole':
-            self.model = DipoleModel(model_param, descrpt, fitting)
+            model = DipoleModel.init_param_jdata(model_param)
         elif fitting_type == 'polar':
-            self.model = PolarModel(model_param, descrpt, fitting)
+            model = PolarModel.init_param_jdata(model_param)
         elif fitting_type == 'global_polar':
-            self.model = GlobalPolarModel(model_param, descrpt, fitting)
+            model = GlobalPolarModel.init_param_jdata(model_param)
         else :
             raise RuntimeError('get unknown fitting type when building model')
 
@@ -314,7 +235,7 @@ class NNPTrainer (AbstractTrainer):
         except:
             lr_type = 'exp'
         if lr_type == 'exp':
-            self.lr = LearningRateExp(lr_param)
+            lr = LearningRateExp.init_param_jdata(lr_param)
         else :
             raise RuntimeError('unknown learning_rate type ' + lr_type)        
 
@@ -322,43 +243,51 @@ class NNPTrainer (AbstractTrainer):
         # infer loss type by fitting_type
         try :
             loss_param = jdata['loss']
-            loss_type = loss_param.get('type', 'ener')
+            loss_type  = loss_param.get('type', 'ener')
         except:
             loss_param = None
             loss_type = 'ener'
 
         if fitting_type == 'ener':
             if loss_type == 'ener':
-                self.loss = EnerStdLoss(loss_param, starter_learning_rate = self.lr.start_lr())
+                loss = EnerStdLoss.init_param_jdata(loss_param, starter_learning_rate = lr.start_lr())
             elif loss_type == 'ener_dipole':
-                self.loss = EnerDipoleLoss(loss_param, starter_learning_rate = self.lr.start_lr())
+                loss = EnerDipoleLoss.init_param_jdata(loss_param, starter_learning_rate = lr.start_lr())
             else:
                 raise RuntimeError('unknow loss type')
         elif fitting_type == 'wfc':
-            self.loss = TensorLoss(loss_param, 
-                                   model = self.model, 
+            loss = TensorLoss.init_param_jdata(
+                                   loss_param, 
+                                   model = model, 
                                    tensor_name = 'wfc',
-                                   tensor_size = self.model.get_out_size(),
-                                   label_name = 'wfc')
+                                   tensor_size = model.get_out_size(),
+                                   label_name = 'wfc'
+                                   )
         elif fitting_type == 'dipole':
-            self.loss = TensorLoss(loss_param, 
-                                   model = self.model, 
+            loss = TensorLoss.init_param_jdata(
+                                   loss_param, 
+                                   model = model, 
                                    tensor_name = 'dipole',
                                    tensor_size = 3,
-                                   label_name = 'dipole')
+                                   label_name = 'dipole'
+                                   )
         elif fitting_type == 'polar':
-            self.loss = TensorLoss(loss_param, 
-                                   model = self.model, 
+            loss = TensorLoss.init_param_jdata(
+                                   loss_param, 
+                                   model = model, 
                                    tensor_name = 'polar',
                                    tensor_size = 9,
-                                   label_name = 'polarizability')
+                                   label_name = 'polarizability'
+                                   )
         elif fitting_type == 'global_polar':
-            self.loss = TensorLoss(loss_param, 
-                                   model = self.model, 
+            loss = TensorLoss.init_param_jdata(
+                                   loss_param, 
+                                   model = model, 
                                    tensor_name = 'global_polar',
                                    tensor_size = 9,
                                    atomic = False,
-                                   label_name = 'polarizability')
+                                   label_name = 'polarizability'
+                                   )
         else :
             raise RuntimeError('get unknown fitting type when building loss function')
 
@@ -378,24 +307,39 @@ class NNPTrainer (AbstractTrainer):
                   .add('profiling_file',str,    default = 'timeline.json')\
                   .add('sys_probs',   list    )\
                   .add('auto_prob_style', str, default = "prob_sys_size")
+
         tr_data = tr_args.parse(training_param)
-        # not needed
-        # self.numb_test = tr_data['numb_test']
-        self.disp_file = tr_data['disp_file']
-        self.disp_freq = tr_data['disp_freq']
-        self.save_freq = tr_data['save_freq']
-        self.save_ckpt = tr_data['save_ckpt']
-        self.display_in_training = tr_data['display_in_training']
-        self.timing_in_training  = tr_data['timing_in_training']
-        self.profiling = tr_data['profiling']
-        self.profiling_file = tr_data['profiling_file']
-        self.sys_probs = tr_data['sys_probs']        
-        self.auto_prob_style = tr_data['auto_prob_style']        
-        self.useBN = False
-        if fitting_type == 'ener' and  fitting.get_numb_fparam() > 0 :
-            self.numb_fparam = fitting.get_numb_fparam()
-        else :
-            self.numb_fparam = 0
+        numb_test           = tr_data['numb_test']
+        disp_file           = tr_data['disp_file']
+        disp_freq           = tr_data['disp_freq']
+        save_freq           = tr_data['save_freq']
+        save_ckpt           = tr_data['save_ckpt']
+        display_in_training = tr_data['display_in_training']
+        timing_in_training  = tr_data['timing_in_training']
+        profiling           = tr_data['profiling']
+        profiling_file      = tr_data['profiling_file']
+        sys_probs           = tr_data['sys_probs']        
+        auto_prob_style     = tr_data['auto_prob_style']
+        
+        return cls(
+                       run_opt,
+                       descrpt_obj         = descrpt,
+                       fitting_obj         = fitting,
+                       model_obj           = model,
+                       loss_obj            = loss,
+                       lr_obj              = lr,
+                       numb_test           = numb_test,
+                       disp_file           = disp_file,
+                       disp_freq           = disp_freq,
+                       save_freq           = save_freq,
+                       save_ckpt           = save_ckpt,
+                       display_in_training = display_in_training,
+                       timing_in_training  = timing_in_training,
+                       profiling           = profiling,
+                       profiling_file      = profiling_file,
+                       sys_probs           = sys_probs,
+                       auto_prob_style     = auto_prob_style
+                    )
 
 
     def _message (self, msg) :
