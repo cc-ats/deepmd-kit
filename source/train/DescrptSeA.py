@@ -6,7 +6,7 @@ from deepmd.RunOptions import global_np_float_precision
 from deepmd.env import op_module
 from deepmd.env import default_tf_session_config
 
-from DescrptLocFrame import AbstractDescrpt
+from deepmd.DescrptLocFrame import AbstractDescrpt
 
 class DescrptSeA (AbstractDescrpt):
     def __init__ (self, sel, rcut=6.0, rcut_smth=0.5, neuron=[10,20,40],

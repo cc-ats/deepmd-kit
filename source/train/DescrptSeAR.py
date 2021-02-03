@@ -6,7 +6,7 @@ from deepmd.DescrptSeA import DescrptSeA
 from deepmd.DescrptSeR import DescrptSeR
 from deepmd.env import op_module
 
-from DescrptLocFrame import AbstractDescrpt
+from deepmd.DescrptLocFrame import AbstractDescrpt
 
 class DescrptSeAR (AbstractDescrpt):
     def __init__ (self, descrpt_a, descrpt_r):

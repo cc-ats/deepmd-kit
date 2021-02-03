@@ -112,7 +112,6 @@ class DescrptLocFrame (AbstractDescrpt) :
         rcut_r    = class_data['rcut']
         return cls(sel_a, sel_r, axis_rule, rcut=rcut_r)
 
-
     def get_rcut (self) :
         return self.rcut_r
 

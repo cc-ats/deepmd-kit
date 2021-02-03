@@ -1,29 +1,27 @@
-
 import dpdata,os,sys,unittest
 import numpy as np
 from deepmd.env import tf
 from common import Data,gen_data
 
-from deepmd.RunOptions import RunOptions
 from deepmd.DataSystem import DataSystem
 from deepmd.DescrptSeA import DescrptSeA
 from deepmd.Fitting import EnerFitting
 from deepmd.Model import Model
 from deepmd.common import j_must_have, j_must_have_d, j_have, j_loader
 
+
 global_ener_float_precision = tf.float64
-global_tf_float_precision = tf.float64
-global_np_float_precision = np.float64
+global_tf_float_precision   = tf.float64
+global_np_float_precision   = np.float64
 
 class TestModel(unittest.TestCase):
-    def setUp(self) :
+    def set_up(self) :
         gen_data()
 
     def test_model(self):
         jfile = 'water_se_a.json'
         jdata = j_loader(jfile)
 
-        run_opt = RunOptions(None) 
         systems = j_must_have(jdata, 'systems')
         set_pfx = j_must_have(jdata, 'set_prefix')
         batch_size = j_must_have(jdata, 'batch_size')
@@ -31,18 +29,25 @@ class TestModel(unittest.TestCase):
         batch_size = 1
         test_size = 1
         stop_batch = j_must_have(jdata, 'stop_batch')
-        rcut = j_must_have (jdata['model']['descriptor'], 'rcut')
+
+        sel         = j_must_have (jdata['model']['descriptor'], 'sel')
+        rcut        = j_must_have (jdata['model']['descriptor'], 'rcut')
+        rcut_smth   = j_must_have (jdata['model']['descriptor'], 'rcut_smth')
+        neuron      = j_must_have (jdata['model']['descriptor'], 'neuron')
+        axis_neuron = j_must_have (jdata['model']['descriptor'], 'axis_neuron')
+        resnet_dt   = j_must_have (jdata['model']['descriptor'], 'resnet_dt')
+        seed        = j_must_have (jdata['model']['descriptor'], 'seed')
         
         data = DataSystem(systems, set_pfx, batch_size, test_size, rcut, run_opt = None)
-        
-        test_data = data.get_test ()
+        test_data = data.get_test()
         numb_test = 1
         
-        descrpt = DescrptSeA(jdata['model']['descriptor'])
-        fitting = EnerFitting(jdata['model']['fitting_net'], descrpt)
-        model = Model(jdata['model'], descrpt, fitting)
+        descrpt = DescrptSeA(sel, rcut=rcut, rcut_smth=rcut_smth, neuron=neuron,
+                        axis_neuron=axis_neuron, resnet_dt=resnet_dt, seed=seed)
+        fitting = EnerFitting.init_param_jdata(jdata['model'])
+        model   = Model.init_param_jdata(jdata['model'])
+        model.set_descrpt_fitting(descrpt, fitting)
 
-        # model._compute_dstats([test_data['coord']], [test_data['box']], [test_data['type']], [test_data['natoms_vec']], [test_data['default_mesh']])
         input_data = {'coord' : [test_data['coord']], 
                       'box': [test_data['box']], 
                       'type': [test_data['type']],
@@ -74,9 +79,9 @@ class TestModel(unittest.TestCase):
                            t_fparam,
                            suffix = "se_a", 
                            reuse = False)
-        energy = model_pred['energy']
-        force  = model_pred['force']
-        virial = model_pred['virial']
+        energy    = model_pred['energy']
+        force     = model_pred['force']
+        virial    = model_pred['virial']
         atom_ener =  model_pred['atom_ener']
 
         feed_dict_test = {t_prop_c:        test_data['prop_c'],

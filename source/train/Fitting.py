@@ -37,10 +37,6 @@ class AbstractFitting(ABC):
         pass
 
     @abstractmethod
-    def test_on_the_fly(self):
-        pass
-
-    @abstractmethod
     def build(self):
         pass
 
